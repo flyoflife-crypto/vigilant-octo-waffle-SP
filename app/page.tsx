@@ -371,7 +371,10 @@ export default function OnePagerPage() {
     async (project: Project) => {
       const newName = prompt("Enter name for duplicated project:", `${project.name} (Copy)`)
       if (newName) {
-        const newProject = createNewProject(newName, project.data)
+        const newProject = {
+          ...createNewProject(newName),
+          data: JSON.parse(JSON.stringify(project.data)),
+        }
         try {
           const savedProject = await saveProject(newProject)
           setCurrentProject(savedProject)
