@@ -113,6 +113,8 @@ export default function OnePagerPage() {
   const searchParams = useSearchParams()
   const isPresentationMode = searchParams.get("presentation") === "true"
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [data, setData] = useState<OnePagerData | null>(null)
   const [history, setHistory] = useState<HistoryState | null>(null)
   const [showTopMenu, setShowTopMenu] = useState(false)
@@ -236,53 +238,95 @@ export default function OnePagerPage() {
   }, [])
 
   useEffect(() => {
-    let cancelled = false
+    let isMounted = true
 
-    const init = async () => {
+    const loadData = async () => {
+      console.log("🚀 Starting App Initialization...")
       try {
-        const projects = await getAllProjects()
-        const activeId = getActiveProjectId()
+        const loadedProjects = await getAllProjects()
+        
+        if (isMounted) {
+          console.log(`✅ Loaded ${loadedProjects.length} projects`)
+          setProjects(loadedProjects)
 
-        if (cancelled) return
-
-        if (projects.length === 0) {
-          const newProject = createNewProject("My First Project")
-          try {
-            const savedProject = await saveProject(newProject)
-            if (cancelled) return
-            setActiveProjectId(savedProject.id)
-            setCurrentProject(savedProject)
-            setData(savedProject.data)
-            setHistory(loadHistoryFromStorage(savedProject.id, savedProject.data))
-            lastSavedData.current = JSON.stringify(savedProject.data)
-          } catch (error) {
-            throw error
+          const activeId = getActiveProjectId()
+          if (activeId) {
+            const active = loadedProjects.find((p) => p.id === activeId)
+            if (active) setCurrentProject(active)
           }
-        } else {
-          const active = projects.find((p) => p.id === activeId) || projects[0]
-          if (cancelled) return
-          setCurrentProject(active)
-          setData(active.data)
-          setActiveProjectId(active.id)
-          setHistory(loadHistoryFromStorage(active.id, active.data))
-          lastSavedData.current = JSON.stringify(active.data)
         }
       } catch (error) {
-        console.error(error)
-        toast({ variant: "destructive", title: "Failed to load projects from SharePoint" })
+        console.error("❌ Critical Load Error:", error)
+        if (isMounted) {
+          toast({
+            title: "Storage Error",
+            description: "Failed to load data. Please check console.",
+            variant: "destructive",
+          })
+        }
       } finally {
-        if (!cancelled) {
-          isInitialMount.current = false
+        // FORCE loading to stop after 500ms max
+        if (isMounted) {
+          setTimeout(() => {
+            setIsLoading(false)
+            console.log("🏁 Loading state set to FALSE")
+          }, 500)
         }
       }
     }
 
-    void init()
+    loadData()
+
+    return () => { isMounted = false }
+  }, [toast])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const initializeProject = async () => {
+      try {
+        if (projects.length === 0) {
+          const newProject = createNewProject("My First Project")
+          const savedProject = await saveProject(newProject)
+          if (cancelled) return
+          setActiveProjectId(savedProject.id)
+          setCurrentProject(savedProject)
+          setData(savedProject.data)
+          const initialHistory = loadHistoryFromStorage(savedProject.id, savedProject.data)
+          setHistory(initialHistory)
+          lastSavedData.current = JSON.stringify(savedProject.data)
+          isInitialMount.current = false
+          return
+        }
+
+        const activeId = getActiveProjectId()
+        const active = activeId ? projects.find((p) => p.id === activeId) : undefined
+        const project = active ?? projects[0]
+        if (!project) return
+        if (cancelled) return
+        setCurrentProject(project)
+        setData(project.data)
+        setActiveProjectId(project.id)
+        const initialHistory = loadHistoryFromStorage(project.id, project.data)
+        setHistory(initialHistory)
+        lastSavedData.current = JSON.stringify(project.data)
+        isInitialMount.current = false
+      } catch (error) {
+        console.error(error)
+        if (!cancelled) {
+          toast({ variant: "destructive", title: "Failed to load projects" })
+        }
+      }
+    }
+
+    if (!data && !currentProject) {
+      void initializeProject()
+    }
 
     return () => {
       cancelled = true
     }
-  }, [toast])
+  }, [projects, data, currentProject, toast])
 
   useEffect(() => {
     if (isInitialMount.current || !currentProject || !data || !history) return
@@ -371,7 +415,10 @@ export default function OnePagerPage() {
     async (project: Project) => {
       const newName = prompt("Enter name for duplicated project:", `${project.name} (Copy)`)
       if (newName) {
-        const newProject = createNewProject(newName, project.data)
+        const newProject = {
+          ...createNewProject(newName),
+          data: structuredClone(project.data),
+        }
         try {
           const savedProject = await saveProject(newProject)
           setCurrentProject(savedProject)
@@ -566,7 +613,7 @@ export default function OnePagerPage() {
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [handleUndo, handleRedo, handleExportJSON, handleExportPDF, handleCreateNew, toast])
 
-  if (!data || !currentProject) {
+  if (isLoading || !data || !currentProject) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
