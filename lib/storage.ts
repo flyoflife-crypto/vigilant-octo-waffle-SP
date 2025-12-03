@@ -9,11 +9,10 @@ export interface Project {
   updatedAt: string
 }
 
-// --- Constants ---
+// --- Constants (REQUIRED for other components) ---
 const STORAGE_KEY = "mars-onepager-projects"
 const ACTIVE_PROJECT_KEY = "mars-onepager-active"
 
-// Re-export constants required by other components
 export const WEEK_COUNT = 52
 export const PERIOD_COUNT = 13
 
@@ -33,27 +32,19 @@ export const QUARTER_PERIODS: number[][] = [
   [10, 11, 12, 13], // Q4
 ]
 
-// Detect if we are running in a standalone environment (Localhost, GitHub Pages, or File)
-const IS_STANDALONE = typeof window !== 'undefined' && (
-  window.location.hostname === 'localhost' || 
-  window.location.hostname.includes('github.io') ||
-  window.location.protocol === 'file:' ||
-  window.location.hostname === '127.0.0.1'
-)
-
-// --- Helper: Create Empty Project Data ---
+// --- Helper: Create Default Data ---
 function createDefaultData(title: string): OnePagerData {
   return {
     projectName: title,
     niicDate: new Date().toISOString().slice(0, 7),
     projectStatus: "green",
     kpis: [
-      { label: "Budget", value: "100k", color: "green" },
+      { label: "Budget", value: "0", color: "green" },
       { label: "Progress", value: "0%", color: "yellow" }
     ],
     yearGantt: {
       labels: [], 
-      rows: ["Workstream 1", "Workstream 2"], 
+      rows: ["Stream 1", "Stream 2"], 
       bars: [], 
       milestones: [], 
       nowCol: 0, 
@@ -81,14 +72,15 @@ function createDefaultData(title: string): OnePagerData {
   }
 }
 
-// --- Local Storage Helpers ---
+// --- Local Storage Implementation ---
+
 function getLocalProjects(): Project[] {
   if (typeof window === 'undefined') return []
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     return stored ? JSON.parse(stored) : []
   } catch (e) {
-    console.error("LocalStorage read error:", e)
+    console.error("LS Read Error:", e)
     return []
   }
 }
@@ -98,33 +90,37 @@ function saveLocalProjects(projects: Project[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(projects))
   } catch (e) {
-    console.error("LocalStorage write error:", e)
+    console.error("LS Write Error:", e)
   }
 }
 
-// --- Main API Functions ---
+// --- Public API (Identical signature to old API) ---
 
 export async function getAllProjects(): Promise<Project[]> {
-  // Always use LocalStorage for now to prevent hanging
-  console.log("🚀 Using LocalStorage for data")
-  return getLocalProjects()
+  // Simulate async to match interface
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(getLocalProjects())
+    }, 100)
+  })
 }
 
 export async function getProjectById(id: string): Promise<Project | null> {
-  const projects = await getAllProjects()
+  const projects = getLocalProjects()
   return projects.find(p => p.id === id) || null
 }
 
 export async function saveProject(project: Project): Promise<Project> {
   const projects = getLocalProjects()
-  const index = projects.findIndex(p => p.id === project.id)
   
   const updatedProject = {
     ...project,
-    id: project.id || Date.now().toString(),
+    id: project.id || Date.now().toString(), // Ensure ID exists
     updatedAt: new Date().toISOString()
   }
 
+  const index = projects.findIndex(p => p.id === updatedProject.id)
+  
   if (index >= 0) {
     projects[index] = updatedProject
   } else {
@@ -133,7 +129,6 @@ export async function saveProject(project: Project): Promise<Project> {
   }
 
   saveLocalProjects(projects)
-  console.log("💾 Project saved to LocalStorage:", updatedProject.name)
   return updatedProject
 }
 
@@ -142,7 +137,8 @@ export async function deleteProject(id: string): Promise<void> {
   const filtered = projects.filter(p => p.id !== id)
   saveLocalProjects(filtered)
   
-  if (getActiveProjectId() === id) {
+  // Clear active if deleted
+  if (typeof window !== "undefined" && localStorage.getItem(ACTIVE_PROJECT_KEY) === id) {
     localStorage.removeItem(ACTIVE_PROJECT_KEY)
   }
 }
