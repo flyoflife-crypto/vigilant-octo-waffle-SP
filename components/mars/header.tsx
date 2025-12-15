@@ -1,8 +1,8 @@
 "use client"
 
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import type { OnePagerData, StatusColor } from "@/types/onepager"
+import { useState } from "react"
+import { EyeOff, Users, UserCheck, Crown } from "lucide-react"
+import type { OnePagerData } from "@/types/onepager"
 
 interface HeaderProps {
   data: OnePagerData
@@ -10,114 +10,187 @@ interface HeaderProps {
 }
 
 export function Header({ data, setData }: HeaderProps) {
-  const cycleStatus = (current: StatusColor): StatusColor => {
-    const cycle: StatusColor[] = ["green", "yellow", "red"]
-    const idx = cycle.indexOf(current)
-    return cycle[(idx + 1) % cycle.length]
+  const [showRoles, setShowRoles] = useState(true)
+
+  const updateProjectName = (name: string) => {
+    setData({ ...data, projectName: name || "Untitled Project" })
   }
 
-  const getStatusColor = (status: StatusColor) => {
-    const colors = {
-      green: "bg-[var(--status-green)]",
-      yellow: "bg-[var(--status-yellow)]",
-      red: "bg-[var(--status-red)]",
-    }
-    return colors[status]
+  const updateNiicDate = (date: string) => {
+    setData({ ...data, niicDate: date })
   }
 
-  const getStatusLabel = (status: StatusColor) => {
-    const labels = {
-      green: "On Track",
-      yellow: "At Risk",
-      red: "Delayed",
-    }
-    return labels[status]
+  const updateStatus = (status: "green" | "yellow" | "red") => {
+    setData({ ...data, projectStatus: status })
   }
+
+  const toggleRole = (role: keyof NonNullable<OnePagerData["roles"]>) => {
+    const current = data.roles?.[role] ?? ""
+    const capitalized = role.charAt(0).toUpperCase() + role.slice(1)
+    const nextValue = current ? "" : `${capitalized} Name`
+    setData({
+      ...data,
+      roles: {
+        ...data.roles,
+        [role]: nextValue,
+      },
+    })
+  }
+
+  const statusLabel =
+    data.projectStatus === "green"
+      ? "On Track"
+      : data.projectStatus === "yellow"
+      ? "At Risk"
+      : "Delayed"
+
+  const statusColor =
+    data.projectStatus === "green"
+      ? "bg-green-500"
+      : data.projectStatus === "yellow"
+      ? "bg-yellow-400"
+      : "bg-red-500"
 
   return (
-    <Card className="bg-[var(--mars-blue-primary)] text-white p-3 md:p-4 shadow-lg animate-slide-up">
-      <div className="space-y-3">
-        {/* Top row */}
-        <div className="flex flex-wrap gap-3 items-start justify-between">
-          <div className="flex-1 min-w-[200px]">
-            <div className="text-xl font-bold tracking-wider mb-1">MARS</div>
-            <Input
-              value={data.projectName}
-              onChange={(e) => setData({ ...data, projectName: e.target.value })}
-              className="text-lg font-bold bg-transparent border-none text-white placeholder:text-white/60 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
-              placeholder="Project Name"
-            />
-            <div className="flex items-center gap-2 mt-1.5 text-xs">
-              <span className="opacity-80 font-semibold">NIIC Date:</span>
-              <Input
-                type="month"
-                value={data.niicDate}
-                onChange={(e) => setData({ ...data, niicDate: e.target.value })}
-                className="bg-white/15 border-none text-white w-36 h-6 px-2 rounded text-xs"
-              />
-            </div>
-          </div>
-
-          <div
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/15 cursor-pointer hover:bg-white/25 transition-colors backdrop-blur-sm"
-            onClick={() => setData({ ...data, projectStatus: cycleStatus(data.projectStatus) })}
-          >
-            <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(data.projectStatus)} shadow-md`} />
-            <div className="flex flex-col">
-              <span className="text-[8px] uppercase opacity-70 font-semibold leading-tight">Project Status</span>
-              <span className="text-[11px] font-bold leading-tight">{getStatusLabel(data.projectStatus)}</span>
-            </div>
+    <div className="relative mb-6">
+      {/* Main header bar */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 p-6 rounded-2xl bg-[#0909A8] text-white shadow-md">
+        {/* Left: Mars logo */}
+        <div className="flex-shrink-0 flex items-center gap-3">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 shadow-lg flex items-center justify-center">
+            <span className="text-2xl font-extrabold tracking-wide">MARS</span>
           </div>
         </div>
 
-        {/* KPIs and Roles */}
-        <div className="flex flex-wrap gap-3 items-start">
-          <div className="flex flex-wrap gap-2">
-            {data.kpis.map((kpi, idx) => (
-              <div key={idx} className="bg-white/15 rounded-lg px-2.5 py-1.5 min-w-[80px] text-center backdrop-blur-sm">
-                <Input
-                  value={kpi.value}
-                  onChange={(e) => {
-                    const newKpis = [...data.kpis]
-                    newKpis[idx].value = e.target.value
-                    setData({ ...data, kpis: newKpis })
-                  }}
-                  className="text-base font-bold bg-transparent border-none text-white text-center p-0 h-auto mb-0.5 focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-                <Input
-                  value={kpi.label}
-                  onChange={(e) => {
-                    const newKpis = [...data.kpis]
-                    newKpis[idx].label = e.target.value
-                    setData({ ...data, kpis: newKpis })
-                  }}
-                  className="text-[8px] uppercase opacity-80 bg-transparent border-none text-white text-center p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-              </div>
-            ))}
+        {/* Center: Project name + NIIC date */}
+        <div className="flex-1 min-w-0 flex flex-col gap-3">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <h1
+                contentEditable
+                suppressContentEditableWarning
+                className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight bg-white/5 px-4 py-2 rounded-xl border border-white/10 focus:outline-none focus:ring-2 focus:ring-white/40"
+                onBlur={(e) => updateProjectName(e.currentTarget.textContent || "")}
+              >
+                {data.projectName}
+              </h1>
+            </div>
           </div>
+          <div className="flex items-center gap-3 text-xs sm:text-sm">
+            <span className="font-medium opacity-80">NIIC Date:</span>
+            <input
+              type="month"
+              value={data.niicDate}
+              onChange={(e) => updateNiicDate(e.target.value)}
+              className="px-3 py-1.5 rounded-lg text-xs sm:text-sm text-gray-900 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+        </div>
 
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(data.roles).map(([key, value]) => (
-              <div key={key} className="bg-white/15 rounded-lg px-2.5 py-1.5 min-w-[100px] backdrop-blur-sm">
-                <div className="text-[8px] uppercase opacity-80 mb-0.5 leading-tight">
-                  {key === "sponsor" ? "Sponsor" : key === "productOwner" ? "Product Owner" : "Project Manager"}
-                </div>
-                <Input
-                  value={value}
-                  onChange={(e) => {
-                    setData({
-                      ...data,
-                      roles: { ...data.roles, [key]: e.target.value },
-                    })
-                  }}
-                  className="text-[11px] font-semibold bg-transparent border-none text-white p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-              </div>
-            ))}
-          </div>
+        {/* Right: project status */}
+        <div className="flex-shrink-0 flex flex-col items-end gap-2">
+          <span className="text-xs uppercase tracking-wide opacity-70">
+            Project Status
+          </span>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white text-gray-900 text-xs sm:text-sm font-medium shadow"
+          >
+            <span
+              className={`inline-flex w-2.5 h-2.5 rounded-full ${statusColor}`}
+            />
+            <span>{statusLabel}</span>
+            <span className="sr-only">Change status in side controls</span>
+          </button>
+          {/* The actual status switch is still controlled elsewhere (TopButtons / side UI),
+              here мы только отображаем текущий статус как «светофор» */}
         </div>
       </div>
-    </Card>
+
+      {/* Roles cloud (optional) */}
+      {showRoles && (
+        <div className="mt-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setShowRoles(false)}
+            className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
+          >
+            <EyeOff className="w-3 h-3" />
+            <span>Hide roles strip</span>
+          </button>
+
+          <div className="flex flex-wrap items-center gap-4 ml-2">
+            {/* Project Manager */}
+            <button
+              type="button"
+              onClick={() => toggleRole("projectManager")}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors min-w-[160px]"
+            >
+              <Users className="w-4 h-4 text-blue-600" />
+              <div className="text-left">
+                <div className="text-[11px] uppercase tracking-wide text-gray-500">
+                  Project Manager
+                </div>
+                {data.roles?.projectManager ? (
+                  <div className="text-sm font-semibold text-gray-900 truncate max-w-[180px]">
+                    {data.roles.projectManager}
+                  </div>
+                ) : (
+                  <div className="text-[11px] italic text-gray-400">
+                    Click to add
+                  </div>
+                )}
+              </div>
+            </button>
+
+            {/* Product Owner */}
+            <button
+              type="button"
+              onClick={() => toggleRole("productOwner")}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors min-w-[160px]"
+            >
+              <UserCheck className="w-4 h-4 text-green-600" />
+              <div className="text-left">
+                <div className="text-[11px] uppercase tracking-wide text-gray-500">
+                  Product Owner
+                </div>
+                {data.roles?.productOwner ? (
+                  <div className="text-sm font-semibold text-gray-900 truncate max-w-[180px]">
+                    {data.roles.productOwner}
+                  </div>
+                ) : (
+                  <div className="text-[11px] italic text-gray-400">
+                    Click to add
+                  </div>
+                )}
+              </div>
+            </button>
+
+            {/* Sponsor */}
+            <button
+              type="button"
+              onClick={() => toggleRole("sponsor")}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors min-w-[160px]"
+            >
+              <Crown className="w-4 h-4 text-purple-600" />
+              <div className="text-left">
+                <div className="text-[11px] uppercase tracking-wide text-gray-500">
+                  Sponsor
+                </div>
+                {data.roles?.sponsor ? (
+                  <div className="text-sm font-semibold text-gray-900 truncate max-w-[180px]">
+                    {data.roles.sponsor}
+                  </div>
+                ) : (
+                  <div className="text-[11px] italic text-gray-400">
+                    Click to add
+                  </div>
+                )}
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
