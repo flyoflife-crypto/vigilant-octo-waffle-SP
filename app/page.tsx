@@ -133,14 +133,17 @@ export default function OnePagerPage() {
   // Runtime visibility toggles (persisted to localStorage)
   const [showTeam, setShowTeam] = useState(true)
   const [showComments, setShowComments] = useState(true)
+  const [showArtifacts, setShowArtifacts] = useState(true)
 
   useEffect(() => {
     try {
       // Backward/forward compatibility: accept both legacy and new keys
       const sT = (localStorage.getItem('pref.showTeam') ?? localStorage.getItem('tp'))
       const sC = (localStorage.getItem('pref.showComments') ?? localStorage.getItem('comments'))
+      const sA = localStorage.getItem('pref.showArtifacts')
       if (sT !== null) setShowTeam(sT === 'true')
       if (sC !== null) setShowComments(sC === 'true')
+      if (sA !== null) setShowArtifacts(sA === 'true')
     } catch {}
   }, [])
 
@@ -157,6 +160,12 @@ export default function OnePagerPage() {
       localStorage.setItem('comments', String(showComments))
     } catch {}
   }, [showComments])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('pref.showArtifacts', String(showArtifacts))
+    } catch {}
+  }, [showArtifacts])
 
   const isInitialMount = useRef(true)
   const lastSavedData = useRef<string>("")
@@ -674,6 +683,12 @@ export default function OnePagerPage() {
                           <Switch checked={showComments} onCheckedChange={(v) => setShowComments(!!v)} />
                         </label>
                       </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <label className="flex items-center justify-between w-full cursor-pointer">
+                          <span className="text-sm">Artifacts</span>
+                          <Switch checked={showArtifacts} onCheckedChange={(v) => setShowArtifacts(!!v)} />
+                        </label>
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -707,11 +722,39 @@ export default function OnePagerPage() {
 
           <DoneNext data={data} setData={setData} />
 
-          {showTeam && (
-            <TeamPerformance data={data} setData={setData} />
-          )}
+          {/* Team / Risks / Artifacts adaptive layout */}
+          <div className="grid grid-cols-1 gap-4 md:gap-6">
+            {showTeam && (
+              <div>
+                <TeamPerformance data={data} setData={setData} />
+              </div>
+            )}
 
-          <RisksArtifacts data={data} setData={setData} />
+            <div
+              className={`
+                grid gap-4 md:gap-6
+                ${showArtifacts ? "md:grid-cols-2" : "md:grid-cols-1"}
+              `}
+            >
+              <div>
+                <RisksArtifacts
+                  data={data}
+                  setData={setData}
+                  mode="risks-only"
+                />
+              </div>
+
+              {showArtifacts && (
+                <div>
+                  <RisksArtifacts
+                    data={data}
+                    setData={setData}
+                    mode="artifacts-only"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
 
           {showComments && (
             <Comments data={data} setData={setData} />

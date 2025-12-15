@@ -33,6 +33,7 @@ import { useState, useRef, useEffect, useLayoutEffect } from "react"
 interface RisksArtifactsProps {
   data: OnePagerData
   setData: (data: OnePagerData) => void
+  mode?: "both" | "risks-only" | "artifacts-only"
 }
 
 // Auto-growing textarea (no internal scrollbars, grows with content)
@@ -76,7 +77,10 @@ const AutoGrowTextarea: React.FC<{
   )
 }
 
-export function RisksArtifacts({ data, setData }: RisksArtifactsProps) {
+export function RisksArtifacts({ data, setData, mode = "both" }: RisksArtifactsProps) {
+  const showRisks = mode === "both" || mode === "risks-only"
+  const showArtifacts = mode === "both" || mode === "artifacts-only"
+
   const [formatMenu, setFormatMenu] = useState<{
     show: boolean
     x: number
@@ -270,141 +274,147 @@ export function RisksArtifacts({ data, setData }: RisksArtifactsProps) {
     setFormatMenu((m) => ({ ...m, show: false }))
   }
 
-  return (
-    <div className="grid md:grid-cols-2 gap-5 animate-slide-up">
-      <Card className="p-6 shadow-sm hover:shadow-md transition-shadow">
-        <h3 className="text-lg font-bold text-[var(--mars-blue-primary)] mb-4">Risks</h3>
+  const gridCols = showRisks && showArtifacts ? "md:grid-cols-2" : "md:grid-cols-1"
 
-        <div className="space-y-2">
-          <div className="grid grid-cols-[1fr_100px_1fr] gap-2 pb-2 border-b border-[var(--mars-gray-border)] font-semibold text-sm text-gray-600">
-            <div>Risk</div>
-            <div className="text-center">Impact</div>
-            <div>Mitigation</div>
+  return (
+    <div className={`grid grid-cols-1 ${gridCols} gap-5 animate-slide-up`}>
+      {showRisks && (
+        <Card className="p-6 shadow-sm hover:shadow-md transition-shadow">
+          <h3 className="text-lg font-bold text-[var(--mars-blue-primary)] mb-4">Risks</h3>
+
+          <div className="space-y-2">
+            <div className="grid grid-cols-[1fr_100px_1fr] gap-2 pb-2 border-b border-[var(--mars-gray-border)] font-semibold text-sm text-gray-600">
+              <div>Risk</div>
+              <div className="text-center">Impact</div>
+              <div>Mitigation</div>
+            </div>
+
+            {data.risks.map((risk, idx) => (
+              <div
+                key={idx}
+                className="grid grid-cols-[1fr_100px_1fr] gap-2 items-start group border-b border-[var(--mars-gray-border)] py-2 relative"
+              >
+                <AutoGrowTextarea
+                  value={risk.risk}
+                  onChange={(e) => updateRisk(idx, "risk", e.target.value)}
+                  onContextMenu={(e) => handleContextMenu(e, "risk", idx)}
+                  placeholder="Risk description"
+                />
+
+                <button
+                  onContextMenu={(e) => handleImpactClick(e, idx)}
+                  onClick={(e) => {
+                    if (e.ctrlKey) handleImpactClick(e, idx)
+                  }}
+                  onMouseDown={(e) => handleImpactMouseDown(e, idx)}
+                  onMouseUp={handleImpactMouseUp}
+                  onMouseLeave={handleImpactMouseUp}
+                  className="self-center flex items-center justify-center gap-1 min-h-[36px] px-2 rounded border border-[var(--mars-gray-border)] hover:bg-gray-50 transition-colors cursor-pointer"
+                  title="Right-click or Ctrl+Click to change"
+                >
+                  <Circle className={`w-4 h-4 fill-current ${getImpactColor(risk.impact)}`} />
+                  <span className="text-xs">{getImpactLabel(risk.impact)}</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <AutoGrowTextarea
+                    value={risk.mitigation}
+                    onChange={(e) => updateRisk(idx, "mitigation", e.target.value)}
+                    onContextMenu={(e) => handleContextMenu(e, "mitigation", idx)}
+                    placeholder="Mitigation plan"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeRisk(idx)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity h-9 w-9 flex-shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {data.risks.map((risk, idx) => (
+          <Button
+            onClick={addRisk}
+            variant="outline"
+            size="sm"
+            className="mt-4 gap-2 hover:bg-[var(--mars-blue-primary)] hover:text-white transition-colors bg-transparent"
+          >
+            <Plus className="w-4 h-4" />
+            Add Risk
+          </Button>
+
+          {contextMenu && (
             <div
-              key={idx}
-              className="grid grid-cols-[1fr_100px_1fr] gap-2 items-start group border-b border-[var(--mars-gray-border)] py-2 relative"
+              ref={menuRef}
+              className="fixed bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[140px]"
+              style={{ left: contextMenu.x, top: contextMenu.y }}
             >
-              <AutoGrowTextarea
-                value={risk.risk}
-                onChange={(e) => updateRisk(idx, "risk", e.target.value)}
-                onContextMenu={(e) => handleContextMenu(e, "risk", idx)}
-                placeholder="Risk description"
-              />
-
               <button
-                onContextMenu={(e) => handleImpactClick(e, idx)}
-                onClick={(e) => {
-                  if (e.ctrlKey) handleImpactClick(e, idx)
-                }}
-                onMouseDown={(e) => handleImpactMouseDown(e, idx)}
-                onMouseUp={handleImpactMouseUp}
-                onMouseLeave={handleImpactMouseUp}
-                className="self-center flex items-center justify-center gap-1 min-h-[36px] px-2 rounded border border-[var(--mars-gray-border)] hover:bg-gray-50 transition-colors cursor-pointer"
-                title="Right-click or Ctrl+Click to change"
+                onClick={() => setImpact("green")}
+                className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm"
               >
-                <Circle className={`w-4 h-4 fill-current ${getImpactColor(risk.impact)}`} />
-                <span className="text-xs">{getImpactLabel(risk.impact)}</span>
+                <Circle className="w-4 h-4 fill-current text-green-500" />
+                Low
               </button>
+              <button
+                onClick={() => setImpact("yellow")}
+                className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm"
+              >
+                <Circle className="w-4 h-4 fill-current text-yellow-500" />
+                Medium
+              </button>
+              <button
+                onClick={() => setImpact("red")}
+                className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm"
+              >
+                <Circle className="w-4 h-4 fill-current text-red-500" />
+                High
+              </button>
+            </div>
+          )}
+        </Card>
+      )}
 
-              <div className="flex items-center gap-2">
+      {showArtifacts && (
+        <Card className="p-6 shadow-sm hover:shadow-md transition-shadow">
+          <h3 className="text-lg font-bold text-[var(--mars-blue-primary)] mb-4">Artifacts</h3>
+
+          <div className="space-y-2">
+            {data.artifacts.map((artifact, idx) => (
+              <div key={idx} className="flex items-start gap-2 group border-b border-[var(--mars-gray-border)] py-2">
                 <AutoGrowTextarea
-                  value={risk.mitigation}
-                  onChange={(e) => updateRisk(idx, "mitigation", e.target.value)}
-                  onContextMenu={(e) => handleContextMenu(e, "mitigation", idx)}
-                  placeholder="Mitigation plan"
+                  value={artifact.label}
+                  onChange={(e) => updateArtifact(idx, "label", e.target.value)}
+                  onContextMenu={(e) => handleContextMenu(e, "artifact", idx)}
+                  placeholder="Artifact label or link"
+                  className="flex-1"
                 />
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => removeRisk(idx)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity h-9 w-9 flex-shrink-0"
+                  onClick={() => removeArtifact(idx)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity self-start"
                 >
                   <X className="w-4 h-4" />
                 </Button>
               </div>
-            </div>
-          ))}
-        </div>
-
-        <Button
-          onClick={addRisk}
-          variant="outline"
-          size="sm"
-          className="mt-4 gap-2 hover:bg-[var(--mars-blue-primary)] hover:text-white transition-colors bg-transparent"
-        >
-          <Plus className="w-4 h-4" />
-          Add Risk
-        </Button>
-
-        {contextMenu && (
-          <div
-            ref={menuRef}
-            className="fixed bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[140px]"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
-          >
-            <button
-              onClick={() => setImpact("green")}
-              className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm"
-            >
-              <Circle className="w-4 h-4 fill-current text-green-500" />
-              Low
-            </button>
-            <button
-              onClick={() => setImpact("yellow")}
-              className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm"
-            >
-              <Circle className="w-4 h-4 fill-current text-yellow-500" />
-              Medium
-            </button>
-            <button
-              onClick={() => setImpact("red")}
-              className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-sm"
-            >
-              <Circle className="w-4 h-4 fill-current text-red-500" />
-              High
-            </button>
+            ))}
           </div>
-        )}
-      </Card>
 
-      <Card className="p-6 shadow-sm hover:shadow-md transition-shadow">
-        <h3 className="text-lg font-bold text-[var(--mars-blue-primary)] mb-4">Artifacts</h3>
-
-        <div className="space-y-2">
-          {data.artifacts.map((artifact, idx) => (
-            <div key={idx} className="flex items-start gap-2 group border-b border-[var(--mars-gray-border)] py-2">
-              <AutoGrowTextarea
-                value={artifact.label}
-                onChange={(e) => updateArtifact(idx, "label", e.target.value)}
-                onContextMenu={(e) => handleContextMenu(e, "artifact", idx)}
-                placeholder="Artifact label or link"
-                className="flex-1"
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => removeArtifact(idx)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity self-start"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-
-        <Button
-          onClick={addArtifact}
-          variant="outline"
-          size="sm"
-          className="mt-4 gap-2 hover:bg-[var(--mars-blue-primary)] hover:text-white transition-colors bg-transparent"
-        >
-          <Plus className="w-4 h-4" />
-          Add Artifact
-        </Button>
-      </Card>
+          <Button
+            onClick={addArtifact}
+            variant="outline"
+            size="sm"
+            className="mt-4 gap-2 hover:bg-[var(--mars-blue-primary)] hover:text-white transition-colors bg-transparent"
+          >
+            <Plus className="w-4 h-4" />
+            Add Artifact
+          </Button>
+        </Card>
+      )}
 
       {formatMenu.show && (
         <TextFormatMenu
