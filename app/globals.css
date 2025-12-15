@@ -275,3 +275,52 @@
   -webkit-print-color-adjust: exact !important;
   print-color-adjust: exact !important;
 }
+
+/* Cleaner export mode for PNG/PDF */
+body.screenshot-mode .print\:hidden,
+body.screenshot-mode .export-hidden {
+  display: none !important;
+}
+
+body.screenshot-mode button:has(svg[class*="lucide-plus"]),
+body.screenshot-mode button:has(svg[class*="Plus"]),
+body.screenshot-mode button[class*="add"],
+body.screenshot-mode button[aria-label*="Add"] {
+  display: none !important;
+}
+
+body.screenshot-mode [class*="cursor-ew-resize"] {
+  display: none !important;
+}
+
+body.screenshot-mode [role="combobox"] {
+  pointer-events: none;
+}
+
+body.screenshot-mode * {
+  cursor: default !important;
+  user-select: none !important;
+}
+
+body.screenshot-mode #onepagerRoot {
+  overflow: visible !important;
+}
+
+body.screenshot-mode [data-export-keep] {
+  display: block !important;
+  visibility: visible !important;
+}
+
+@media print {
+  button,
+  [role="button"],
+  .print\:hidden,
+  .export-hidden {
+    display: none !important;
+  }
+
+  * {
+    box-shadow: none !important;
+    transition: none !important;
+  }
+}
