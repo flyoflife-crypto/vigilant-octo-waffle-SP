@@ -1,0 +1,38 @@
+name: Test Build (No Release)
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test-build:
+    name: Test Build
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - run: npm ci
+      - run: npm run build:web
+      
+      - name: Build Electron
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            npm run pack
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            npx electron-builder --mac dmg --publish=never
+          else
+            npx electron-builder --linux AppImage --publish=never
+          fi
+        shell: bash
+      
+      - run: ls -R dist || dir dist
+        shell: bash

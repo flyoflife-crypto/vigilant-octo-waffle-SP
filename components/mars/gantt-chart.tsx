@@ -571,7 +571,7 @@ export function GanttChart({ type, title, data, onChange, selectedQuarter, onQua
 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
           <button
             onClick={addRow}
-            className="px-3 py-1.5 text-sm bg-[var(--mars-blue-primary)] text-white rounded-md hover:opacity-90 transition-opacity flex items-center gap-2 print:hidden"
+            className="px-3 py-1.5 text-sm bg-[var(--mars-blue-primary)] text-white rounded-md hover:opacity-90 transition-opacity flex items-center gap-2 print:hidden export-hidden"
           >
             <Plus className="w-4 h-4" />
             Add Row
@@ -838,7 +838,7 @@ export function GanttChart({ type, title, data, onChange, selectedQuarter, onQua
                       onMouseLeave={() => { if (!dragState) setSelectedBar(null) }}
                     >
                       <div
-                        className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30"
+                        className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 export-hidden"
                         onMouseDown={(e) => {
                           e.stopPropagation()
                           setDragState({
@@ -869,7 +869,7 @@ export function GanttChart({ type, title, data, onChange, selectedQuarter, onQua
                         />
                       </span>
                       <div
-                        className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30"
+                        className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 export-hidden"
                         onMouseDown={(e) => {
                           e.stopPropagation()
                           setDragState({
@@ -988,7 +988,7 @@ export function GanttChart({ type, title, data, onChange, selectedQuarter, onQua
 
       {contextMenu && (
         <div
-          className="fixed bg-white shadow-lg rounded-lg py-1 z-50 min-w-[180px] border border-gray-200"
+          className="fixed bg-white shadow-lg rounded-lg py-1 z-50 min-w-[180px] border border-gray-200 export-hidden"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >

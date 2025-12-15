@@ -14,7 +14,8 @@ import { ProjectManager } from "@/components/mars/project-manager"
 import { useToast } from "@/hooks/use-toast"
 import { sanitizeHTML } from "@/lib/sanitize"
 import type { OnePagerData, GanttData } from "@/types/onepager"
-import { exportFullPagePng } from '@/lib/png';
+import { exportFullPagePng } from "@/lib/png"
+import { PDFExportDialog } from "@/components/mars/pdf-export-dialog"
 import MarkdownHotkeys from "@/components/global/MarkdownHotkeys";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Switch } from "@/components/ui/switch"
@@ -119,6 +120,7 @@ export default function OnePagerPage() {
   const [history, setHistory] = useState<HistoryState | null>(null)
   const [showTopMenu, setShowTopMenu] = useState(false)
   const [screenshotMode, setScreenshotMode] = useState(false)
+  const [isPDFDialogOpen, setIsPDFDialogOpen] = useState(false)
 
   useEffect(() => {
     const b = document?.body
@@ -206,20 +208,8 @@ export default function OnePagerPage() {
   }, [toast])
 
   const handleExportPDF = useCallback(() => {
-    setScreenshotMode(true);
-    const onAfter = () => {
-      setScreenshotMode(false);
-      window.removeEventListener('afterprint', onAfter);
-    };
-    window.addEventListener('afterprint', onAfter);
-
-    withHiddenDuringExport(() => { window.print(); });
-
-    toast({
-      title: "Exporting to PDF",
-      description: "Use your browser print dialog to save as PDF",
-    });
-  }, [toast]);
+    setIsPDFDialogOpen(true)
+  }, [])
 
   const handleExportHTML = useCallback(async () => {
     try {
@@ -730,6 +720,19 @@ export default function OnePagerPage() {
           <ExtraSections data={data} setData={setData} />
         </div>
       </div>
+
+      <PDFExportDialog
+        open={isPDFDialogOpen}
+        onOpenChange={setIsPDFDialogOpen}
+        onSuccess={() => toast({ title: "PDF Exported" })}
+        onError={(error) =>
+          toast({
+            title: "Export Failed",
+            description: (error as Error).message,
+            variant: "destructive",
+          })
+        }
+      />
     </div>
   )
 }

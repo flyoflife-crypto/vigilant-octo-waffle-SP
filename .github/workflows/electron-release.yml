@@ -1,0 +1,216 @@
+name: Build & Release Electron
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js static site
+        run: npm run build:web
+        env:
+          NODE_ENV: production
+
+      - name: Verify out/ folder exists
+        run: |
+          if (!(Test-Path "out")) { 
+            Write-Error "out/ folder not created!" 
+            exit 1 
+          }
+          Write-Host "✅ out/ folder exists"
+          Get-ChildItem out -Recurse | Select-Object -First 10
+        shell: pwsh
+
+      - name: Package Electron (NSIS installer)
+        run: npm run pack
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify dist/ folder
+        run: |
+          if (!(Test-Path "dist")) { 
+            Write-Error "dist/ folder not created!" 
+            exit 1 
+          }
+          Write-Host "✅ Electron build successful"
+          Get-ChildItem dist
+        shell: pwsh
+
+      - name: Upload Windows Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist/*.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js static site
+        run: npm run build:web
+        env:
+          NODE_ENV: production
+
+      - name: Verify out/ folder
+        run: |
+          if [ ! -d "out" ]; then
+            echo "❌ out/ folder not created!"
+            exit 1
+          fi
+          echo "✅ out/ folder exists"
+          ls -lah out | head -10
+
+      - name: Package Electron (.dmg)
+        run: npx electron-builder --mac dmg --publish=never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify dist/ folder
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ dist/ folder not created!"
+            exit 1
+          fi
+          echo "✅ Electron build successful"
+          ls -lah dist
+
+      - name: Upload macOS Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-installer
+          path: dist/*.dmg
+          if-no-files-found: error
+          retention-days: 14
+
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js static site
+        run: npm run build:web
+        env:
+          NODE_ENV: production
+
+      - name: Verify out/ folder
+        run: |
+          if [ ! -d "out" ]; then
+            echo "❌ out/ folder not created!"
+            exit 1
+          fi
+          echo "✅ out/ folder exists"
+          ls -lah out | head -10
+
+      - name: Package Electron (.AppImage)
+        run: npx electron-builder --linux AppImage --publish=never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify dist/ folder
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ dist/ folder not created!"
+            exit 1
+          fi
+          echo "✅ Electron build successful"
+          ls -lah dist
+
+      - name: Upload Linux Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-installer
+          path: dist/*.AppImage
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Create GitHub Release
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-installer
+          path: ./release/windows
+
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-installer
+          path: ./release/macos
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-installer
+          path: ./release/linux
+
+      - name: List all files to release
+        run: |
+          echo "📦 Files to be released:"
+          find ./release -type f
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ./release/windows/*
+            ./release/macos/*
+            ./release/linux/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
