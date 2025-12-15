@@ -71,6 +71,8 @@ export interface ExtraSection {
 export interface OnePagerData {
   projectName: string
   niicDate: string
+  statusDate: string
+  showNiicDate?: boolean
   kpis: KPI[]
   roles: Roles
   projectStatus: StatusColor // Single status instead of prev/current
