@@ -116,43 +116,11 @@ export default function OnePagerPage() {
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [data, setDataState] = useState<OnePagerData | null>(null)
+  const [data, setData] = useState<OnePagerData | null>(null)
   const [history, setHistory] = useState<HistoryState | null>(null)
   const [showTopMenu, setShowTopMenu] = useState(false)
   const [screenshotMode, setScreenshotMode] = useState(false)
   const [isPDFDialogOpen, setIsPDFDialogOpen] = useState(false)
-
-  const applyDataDefaults = useCallback((incoming: OnePagerData): OnePagerData => {
-    const baseRoles = incoming.roles ?? { sponsor: "", productOwner: "", projectManager: "" }
-
-    const ensureKpi = (label: string, fallback: string) => {
-      const existing = incoming.kpis?.find((k) => k.label.toLowerCase() === label.toLowerCase())
-      return existing ?? { label, value: fallback, color: "green" as const }
-    }
-
-    const budget = ensureKpi("Budget", "0")
-    const progress = ensureKpi("Progress", "0%")
-    const otherKpis = (incoming.kpis || []).filter(
-      (k) => !["budget", "progress"].includes(k.label.toLowerCase())
-    )
-
-    const niicDate = incoming.niicDate || new Date().toISOString().slice(0, 7)
-    const statusDate = incoming.statusDate || new Date().toISOString().slice(0, 10)
-
-    return {
-      ...incoming,
-      niicDate,
-      statusDate,
-      showNiicDate: incoming.showNiicDate ?? true,
-      roles: baseRoles,
-      projectStatus: incoming.projectStatus ?? "green",
-      kpis: [budget, progress, ...otherKpis],
-    }
-  }, [])
-
-  const setData = useCallback((next: OnePagerData) => {
-    setDataState(applyDataDefaults(next))
-  }, [applyDataDefaults])
 
   useEffect(() => {
     const b = document?.body
@@ -322,11 +290,10 @@ export default function OnePagerPage() {
           if (cancelled) return
           setActiveProjectId(savedProject.id)
           setCurrentProject(savedProject)
-          const normalized = applyDataDefaults(savedProject.data)
-          setData(normalized)
-          const initialHistory = loadHistoryFromStorage(savedProject.id, normalized)
+          setData(savedProject.data)
+          const initialHistory = loadHistoryFromStorage(savedProject.id, savedProject.data)
           setHistory(initialHistory)
-          lastSavedData.current = JSON.stringify(normalized)
+          lastSavedData.current = JSON.stringify(savedProject.data)
           isInitialMount.current = false
           return
         }
@@ -337,12 +304,11 @@ export default function OnePagerPage() {
         if (!project) return
         if (cancelled) return
         setCurrentProject(project)
-        const normalized = applyDataDefaults(project.data)
-        setData(normalized)
+        setData(project.data)
         setActiveProjectId(project.id)
-        const initialHistory = loadHistoryFromStorage(project.id, normalized)
+        const initialHistory = loadHistoryFromStorage(project.id, project.data)
         setHistory(initialHistory)
-        lastSavedData.current = JSON.stringify(normalized)
+        lastSavedData.current = JSON.stringify(project.data)
         isInitialMount.current = false
       } catch (error) {
         console.error(error)
@@ -359,7 +325,7 @@ export default function OnePagerPage() {
     return () => {
       cancelled = true
     }
-  }, [projects, data, currentProject, toast, applyDataDefaults])
+  }, [projects, data, currentProject, toast])
 
   useEffect(() => {
     if (isInitialMount.current || !currentProject || !data || !history) return
@@ -428,11 +394,10 @@ export default function OnePagerPage() {
       try {
         const savedProject = await saveProject(newProject)
         setCurrentProject(savedProject)
-        const normalized = applyDataDefaults(savedProject.data)
-        setData(normalized)
+        setData(savedProject.data)
         setActiveProjectId(savedProject.id)
-        setHistory(createHistoryState(normalized))
-        lastSavedData.current = JSON.stringify(normalized)
+        setHistory(createHistoryState(savedProject.data))
+        lastSavedData.current = JSON.stringify(savedProject.data)
         toast({
           title: "Project created",
           description: `Created new project "${name}"`,
@@ -442,7 +407,7 @@ export default function OnePagerPage() {
         toast({ variant: "destructive", title: "Failed to create project" })
       }
     },
-    [toast, applyDataDefaults],
+    [toast],
   )
 
   const handleDuplicate = useCallback(
@@ -456,11 +421,10 @@ export default function OnePagerPage() {
         try {
           const savedProject = await saveProject(newProject)
           setCurrentProject(savedProject)
-          const normalized = applyDataDefaults(savedProject.data)
-          setData(normalized)
+          setData(savedProject.data)
           setActiveProjectId(savedProject.id)
-          setHistory(createHistoryState(normalized))
-          lastSavedData.current = JSON.stringify(normalized)
+          setHistory(createHistoryState(savedProject.data))
+          lastSavedData.current = JSON.stringify(savedProject.data)
           toast({
             title: "Project duplicated",
             description: `Created "${newName}" from "${project.name}"`,
@@ -471,7 +435,7 @@ export default function OnePagerPage() {
         }
       }
     },
-    [toast, applyDataDefaults],
+    [toast],
   )
 
   const getQuarterGanttData = useCallback((): GanttData => {
@@ -522,17 +486,16 @@ export default function OnePagerPage() {
   const handleSelectProject = useCallback(
     (project: Project) => {
       setCurrentProject(project)
-      const normalized = applyDataDefaults(project.data)
-      setData(normalized)
+      setData(project.data)
       setActiveProjectId(project.id)
-      setHistory(loadHistoryFromStorage(project.id, normalized))
-      lastSavedData.current = JSON.stringify(normalized)
+      setHistory(loadHistoryFromStorage(project.id, project.data))
+      lastSavedData.current = JSON.stringify(project.data)
       toast({
         title: "Project loaded",
         description: `Switched to "${project.name}"`,
       })
     },
-    [toast, applyDataDefaults],
+    [toast],
   )
 
   const handleQuarterGanttChange = useCallback(
@@ -726,15 +689,6 @@ export default function OnePagerPage() {
                           <Switch checked={showArtifacts} onCheckedChange={(v) => setShowArtifacts(!!v)} />
                         </label>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <label className="flex items-center justify-between w-full cursor-pointer">
-                          <span className="text-sm">Show NIIC Date</span>
-                          <Switch
-                            checked={data.showNiicDate !== false}
-                            onCheckedChange={(v) => setData({ ...data, showNiicDate: !!v })}
-                          />
-                        </label>
-                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -769,47 +723,38 @@ export default function OnePagerPage() {
           <DoneNext data={data} setData={setData} />
 
           {/* Team / Risks / Artifacts adaptive layout */}
-          {(() => {
-            const visibleSections = [
-              showTeam ? "team" : null,
-              "risks",
-              showArtifacts ? "artifacts" : null,
-            ].filter(Boolean)
-            const gridCols =
-              visibleSections.length === 3
-                ? "md:grid-cols-3"
-                : visibleSections.length === 2
-                ? "md:grid-cols-2"
-                : "md:grid-cols-1"
+          <div className="grid grid-cols-1 gap-4 md:gap-6">
+            {showTeam && (
+              <div>
+                <TeamPerformance data={data} setData={setData} />
+              </div>
+            )}
 
-            return (
-              <div className={`grid grid-cols-1 gap-4 md:gap-6 ${gridCols}`}>
-                {showTeam && (
-                  <div className="order-1">
-                    <TeamPerformance data={data} setData={setData} />
-                  </div>
-                )}
+            <div
+              className={`
+                grid gap-4 md:gap-6
+                ${showArtifacts ? "md:grid-cols-2" : "md:grid-cols-1"}
+              `}
+            >
+              <div>
+                <RisksArtifacts
+                  data={data}
+                  setData={setData}
+                  mode="risks-only"
+                />
+              </div>
 
-                <div className={showTeam ? "order-2" : "order-1"}>
+              {showArtifacts && (
+                <div>
                   <RisksArtifacts
                     data={data}
                     setData={setData}
-                    mode="risks-only"
+                    mode="artifacts-only"
                   />
                 </div>
-
-                {showArtifacts && (
-                  <div className="order-3">
-                    <RisksArtifacts
-                      data={data}
-                      setData={setData}
-                      mode="artifacts-only"
-                    />
-                  </div>
-                )}
-              </div>
-            )
-          })()}
+              )}
+            </div>
+          </div>
 
           {showComments && (
             <Comments data={data} setData={setData} />

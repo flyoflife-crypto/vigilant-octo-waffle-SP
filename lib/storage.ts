@@ -37,8 +37,6 @@ function createDefaultData(title: string): OnePagerData {
   return {
     projectName: title,
     niicDate: new Date().toISOString().slice(0, 7),
-    statusDate: new Date().toISOString().slice(0, 10),
-    showNiicDate: true,
     projectStatus: "green",
     kpis: [
       { label: "Budget", value: "0", color: "green" },
