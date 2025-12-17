@@ -38,6 +38,7 @@ jobs:
         run: npm run pack
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Build Electron app (macOS)
         if: matrix.os == 'macos-latest'

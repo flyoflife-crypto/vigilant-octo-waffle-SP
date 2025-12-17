@@ -107,7 +107,7 @@
       ],
       "artifactName": "Mars-OnePager-${version}-Windows-Portable.exe",
       "requestedExecutionLevel": "asInvoker",
-      "sign": false
+      "verifyUpdateCodeSignature": false
     },
     "mac": {
       "target": [
