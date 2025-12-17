@@ -69,22 +69,23 @@ export function KpiStrip({ data, setData, className }: KpiStripProps) {
         Key Metrics
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
         {data.kpis.map((kpi, idx) => (
           <div
             key={idx}
-            className={`group relative flex flex-col items-center justify-center p-2 rounded-lg border shadow-sm w-[100px] transition-all ${getColorStyles(kpi.color)}`}
+            className={`group relative flex flex-col items-center justify-center p-2 rounded-lg border shadow-sm min-w-0 h-[64px] transition-all ${getColorStyles(kpi.color)}`}
             onContextMenu={(e) => handleContext(e, idx)}
           >
             <Input
               value={kpi.value}
               onChange={(e) => updateKpi(idx, "value", e.target.value)}
-              className="text-center font-bold text-lg bg-transparent border-none p-0 h-auto shadow-none focus-visible:ring-0"
+              className="text-center font-semibold text-base bg-transparent border-none p-0 h-auto shadow-none focus-visible:ring-0"
             />
             <Input
               value={kpi.label}
               onChange={(e) => updateKpi(idx, "label", e.target.value)}
-              className="text-center text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-transparent border-none p-0 h-auto shadow-none focus-visible:ring-0 mt-1"
+              className="text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500 bg-transparent border-none p-0 h-auto shadow-none focus-visible:ring-0 mt-1 break-words"
+              style={{ wordBreak: 'break-word' }}
             />
             
             {/* Hover Remove */}
@@ -101,10 +102,10 @@ export function KpiStrip({ data, setData, className }: KpiStripProps) {
         {/* Add Button Placeholder */}
         <button
           onClick={addKpi}
-          className="flex flex-col items-center justify-center w-[100px] h-[60px] rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50 transition-all export-hidden"
+          className="flex flex-col items-center justify-center h-[64px] rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50 transition-all export-hidden"
           title="Add"
         >
-          <Plus size={20} />
+          <Plus size={18} />
           <span className="text-[9px] font-bold uppercase mt-1">Add</span>
         </button>
       </div>
