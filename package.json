@@ -98,10 +98,19 @@
     },
     "win": {
       "target": [
+        "portable"
+      ],
+      "artifactName": "Mars-OnePager-${version}-Windows-Portable.exe",
+      "requestedExecutionLevel": "asInvoker",
+      "verifyUpdateCodeSignature": false
+    },
+    "mac": {
+      "target": [
         {
           "target": "portable",
           "arch": [
-            "x64"
+            "x64",
+            "arm64"
           ]
         }
       ],
