@@ -141,7 +141,7 @@ export async function saveProject(project: Project): Promise<Project> {
   if (!projectId) {
     if (!project.createdAt) {
       // New project, generate ID with randomness to prevent collisions
-      projectId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      projectId = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
       console.log('➕ Generating new project ID:', projectId)
     } else {
       // Project has createdAt but lost its ID - attempt to recover by matching createdAt
@@ -151,7 +151,7 @@ export async function saveProject(project: Project): Promise<Project> {
         console.log('✅ Recovered missing project ID:', projectId)
       } else {
         // As fallback generate a new ID but log error - this should be rare
-        projectId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        projectId = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
         console.error('❌ Project missing ID and recovery failed - generating new ID:', projectId)
       }
     }
@@ -193,7 +193,7 @@ export async function deleteProject(id: string): Promise<void> {
 
 export function createNewProject(name: string): Project {
   return {
-    id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
     name,
     data: createDefaultData(name),
     createdAt: new Date().toISOString(),
