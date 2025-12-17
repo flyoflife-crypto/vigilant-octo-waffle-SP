@@ -395,15 +395,14 @@ export default function OnePagerPage() {
       updatedAt: new Date().toISOString(),
     }
 
-    setCurrentProject(updatedProject)
-
     const newHistory = pushHistory(history, data)
     setHistory(newHistory)
-    saveHistoryToStorage(updatedProject.id, newHistory)
+    saveHistoryToStorage(currentProject.id, newHistory)
 
     ;(async () => {
       try {
-        await saveProject(updatedProject)
+        const savedProject = await saveProject(updatedProject)
+        setCurrentProject(savedProject)
       } catch (e) {
         console.error(e)
         toast({
