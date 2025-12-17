@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import type { OnePagerData, StatusColor } from "@/types/onepager"
@@ -37,8 +38,21 @@ export function Header({ data, setData, showNiicDate = true }: HeaderProps) {
 
   return (
     <Card className="relative bg-[var(--mars-blue-primary)] text-white p-4 shadow-lg animate-slide-up overflow-hidden">
-      {/* Project Title - Full Width */}
-      <div className="mb-4">
+      
+      {/* MARS Logo - абсолютно позиционирован справа, вертикально центрирован */}
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10">
+        <Image
+          src="/mars-logo.svg"
+          alt="MARS"
+          width={180}
+          height={53}
+          className="h-12 w-auto"
+          priority
+        />
+      </div>
+      
+      {/* Top Row: Title */}
+      <div className="mb-4 pr-48">
         <Input
           value={data.projectName}
           onChange={(e) => setData({ ...data, projectName: e.target.value })}
@@ -47,14 +61,14 @@ export function Header({ data, setData, showNiicDate = true }: HeaderProps) {
         />
       </div>
 
-      {/* Bottom Section: Dates + Status + Logo */}
-      <div className="flex items-end justify-between gap-6">
+      {/* Bottom Row: Dates (left) + Status (next to dates) */}
+      <div className="flex items-end gap-6">
         
-        {/* LEFT: Date Inputs Column */}
-        <div className="flex flex-col gap-2 items-start">
+        {/* LEFT: Date Inputs stacked vertically */}
+        <div className="flex flex-col gap-2">
           {showNiicDate && (
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-300 font-medium min-w-[80px]">NIIC Date:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-300 font-medium text-sm min-w-[90px]">NIIC Date:</span>
               <Input
                 type="date"
                 value={data.niicDate ?? ''}
@@ -64,8 +78,8 @@ export function Header({ data, setData, showNiicDate = true }: HeaderProps) {
             </div>
           )}
 
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-300 font-medium min-w-[80px]">Status Date:</span>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-300 font-medium text-sm min-w-[90px]">Status Date:</span>
             <Input
               type="date"
               value={data.statusDate ?? ''}
@@ -75,27 +89,18 @@ export function Header({ data, setData, showNiicDate = true }: HeaderProps) {
           </div>
         </div>
 
-        {/* CENTER-LEFT: Traffic Light Status */}
-        <div className="flex-shrink-0">
-          <button
-            onClick={() => setData({ ...data, projectStatus: cycleStatus(data.projectStatus) })}
-            className="group flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-all active:scale-95"
-            title="Click to toggle status"
-          >
-            <div className={`w-4 h-4 rounded-full transition-colors duration-300 ${getStatusColor(data.projectStatus)}`} />
-            <div className="flex flex-col items-start leading-none">
-              <span className="text-[9px] uppercase tracking-widest text-white/70 font-bold mb-0.5">Project Status</span>
-              <span className="text-sm font-bold text-white">{getStatusLabel(data.projectStatus)}</span>
-            </div>
-          </button>
-        </div>
-
-        {/* RIGHT: MARS Logo */}
-        <div className="flex items-end">
-          <div className="text-3xl md:text-4xl font-black tracking-[0.5em] leading-none text-white/90 uppercase pb-1">
-            <span className="inline-block translate-x-[0.35em]">MARS</span>
+        {/* Traffic Light - RIGHT of dates, LEFT side of card */}
+        <button
+          onClick={() => setData({ ...data, projectStatus: cycleStatus(data.projectStatus) })}
+          className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-all active:scale-95"
+          title="Click to toggle status"
+        >
+          <div className={`w-4 h-4 rounded-full transition-colors duration-300 ${getStatusColor(data.projectStatus)}`} />
+          <div className="flex flex-col items-start leading-none">
+            <span className="text-[9px] uppercase tracking-widest text-white/70 font-bold mb-0.5">Project Status</span>
+            <span className="text-sm font-bold text-white">{getStatusLabel(data.projectStatus)}</span>
           </div>
-        </div>
+        </button>
       </div>
     </Card>
   )
