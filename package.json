@@ -10,9 +10,8 @@
     "build:web": "next build",
     "start:web": "next start",
     "dev:electron": "cross-env ELECTRON_START_URL=http://localhost:3000 electron .",
-    "pack:dir": "electron-builder --win dir --publish=never",
-    "pack": "electron-builder --win nsis --publish=never",
-    "build:all": "npm run build:web && npm run pack:dir"
+    "pack": "electron-builder --publish=never",
+    "build:all": "npm run build:web && npm run pack"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
@@ -100,16 +99,30 @@
     "win": {
       "target": [
         {
-          "target": "dir",
+          "target": "portable",
           "arch": [
             "x64"
           ]
         }
       ],
-      "artifactName": "Mars-OnePager-${version}.exe",
+      "artifactName": "Mars-OnePager-${version}-Windows-Portable.exe",
       "requestedExecutionLevel": "asInvoker",
-      "sign": false,
-      "signAndEditExecutable": false
+      "sign": false
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.productivity",
+      "artifactName": "Mars-OnePager-${version}-macOS-${arch}.dmg",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
     },
     "directories": {
       "output": "dist"
