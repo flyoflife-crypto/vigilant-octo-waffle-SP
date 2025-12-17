@@ -11,6 +11,7 @@
     "start:web": "next start",
     "dev:electron": "cross-env ELECTRON_START_URL=http://localhost:3000 electron .",
     "pack": "electron-builder --publish=never",
+    "pack:dir": "electron-builder --dir --publish=never",
     "build:all": "npm run build:web && npm run pack"
   },
   "dependencies": {
