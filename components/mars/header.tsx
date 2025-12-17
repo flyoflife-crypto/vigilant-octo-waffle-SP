@@ -83,20 +83,30 @@ export function Header({ data, setData, showNiicDate = true }: HeaderProps) {
         <div className="flex justify-center">
           <button
             onClick={() => setData({ ...data, projectStatus: cycleStatus(data.projectStatus) })}
-            className="group flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-all active:scale-95"
+            className="group relative flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white/15 backdrop-blur-md hover:bg-white/25 border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.1)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.2)] transition-all duration-300 active:scale-95"
             title="Click to toggle status"
           >
-            <div className={`w-3.5 h-3.5 rounded-full transition-colors duration-300 ${getStatusColor(data.projectStatus)}`} />
-            <div className="flex flex-col items-start leading-none">
-              <span className="text-[9px] uppercase tracking-widest text-white/70 font-bold mb-0.5">Project Status</span>
-              <span className="text-sm font-bold text-white">{getStatusLabel(data.projectStatus)}</span>
+            {/* Индикатор со свечением */}
+            <div className="relative">
+              <div className={`w-4 h-4 rounded-full ${getStatusColor(data.projectStatus)} shadow-lg transition-all duration-300`} />
+              {/* Эффект свечения */}
+              <div className={`absolute inset-0 rounded-full ${getStatusColor(data.projectStatus)} opacity-40 blur-md scale-150 transition-all duration-300`} />
             </div>
+            
+            {/* Текст */}
+            <div className="flex flex-col items-start leading-tight">
+              <span className="text-[9px] uppercase tracking-widest text-white/80 font-bold mb-0.5">Project Status</span>
+              <span className="text-sm font-bold text-white drop-shadow-sm">{getStatusLabel(data.projectStatus)}</span>
+            </div>
+
+            {/* Тонкий блик при наведении */}
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           </button>
         </div>
 
         {/* ПРАВАЯ ЗОНА: Лого MARS */}
         <div className="flex justify-end">
-          <div className="text-3xl md:text-4xl font-black tracking-[0.5em] leading-none text-white/90 uppercase">
+          <div className="text-3xl md:text-4xl font-black tracking-[0.5em] leading-none text-white uppercase">
             <span className="inline-block translate-x-[0.35em]">MARS</span>
           </div>
         </div>
