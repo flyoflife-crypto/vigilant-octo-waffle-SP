@@ -2,10 +2,8 @@ name: Build Electron App
 
 on:
   push:
-    branches:
-      - Dev
-    tags:
-      - 'v*'
+    branches: [Dev]
+    tags: ['v*']
   workflow_dispatch:
 
 jobs:
@@ -46,7 +44,7 @@ jobs:
           try {
             $version = (Get-Content package.json | ConvertFrom-Json).version
             Write-Host "Creating ZIP for version $version"
-            Compress-Archive -Path dist/win-unpacked/* -DestinationPath "dist/Mars-OnePager-$version-Windows-Portable.zip" -Force
+            Compress-Archive -Path dist/win-unpacked -DestinationPath "dist/Mars-OnePager-$version-Windows-Portable.zip" -Force
             Write-Host "Created: dist/Mars-OnePager-$version-Windows-Portable.zip"
           } catch {
             Write-Error "Failed to create ZIP archive: $_"
