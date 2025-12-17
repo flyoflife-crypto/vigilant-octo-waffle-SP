@@ -7,9 +7,15 @@ export interface KPI {
 }
 
 export interface Roles {
-  sponsor: string
-  productOwner: string
-  projectManager: string
+  sponsor: string | null
+  productOwner: string | null
+  projectManager: string | null
+}
+
+export interface ExtraRole {
+  id: string
+  label: string
+  name: string
 }
 
 export interface Statuses {
@@ -71,8 +77,11 @@ export interface ExtraSection {
 export interface OnePagerData {
   projectName: string
   niicDate: string
+  statusDate?: string
   kpis: KPI[]
   roles: Roles
+  extraRoles?: ExtraRole[]
+  roleLabels?: Record<string, string>
   projectStatus: StatusColor // Single status instead of prev/current
   goal: string
   description: string
@@ -86,4 +95,7 @@ export interface OnePagerData {
   artifacts: Artifact[]
   comments: string
   extraSections: ExtraSection[]
+  // Optional visibility prefs saved separately; keep here optional for compatibility
+  showArtifacts?: boolean
+  showNiicDate?: boolean
 }

@@ -2,15 +2,18 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/mars/header"
+import { KpiStrip } from "@/components/mars/kpi-strip"
+import { RolesStrip } from "@/components/mars/roles-strip"
 import { GoalDescription } from "@/components/mars/goal-description"
 import { GanttChart } from "@/components/mars/gantt-chart"
 import { DoneNext } from "@/components/mars/done-next"
 import { TeamPerformance } from "@/components/mars/team-performance"
-import { RisksArtifacts } from "@/components/mars/risks-artifacts"
+import { RisksCardInline, ArtifactsCardInline } from "@/components/mars/risks-artifacts"
 import { Comments } from "@/components/mars/comments"
 import { ExtraSections } from "@/components/mars/extra-sections"
 import { TopButtons } from "@/components/mars/top-buttons"
 import { ProjectManager } from "@/components/mars/project-manager"
+import { PDFExportDialog } from "@/components/mars/pdf-export-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { sanitizeHTML } from "@/lib/sanitize"
 import type { OnePagerData, GanttData } from "@/types/onepager"
@@ -131,14 +134,20 @@ export default function OnePagerPage() {
   // Runtime visibility toggles (persisted to localStorage)
   const [showTeam, setShowTeam] = useState(true)
   const [showComments, setShowComments] = useState(true)
+  const [showArtifacts, setShowArtifacts] = useState(true)
+  const [showNiicDate, setShowNiicDate] = useState(true)
 
   useEffect(() => {
     try {
       // Backward/forward compatibility: accept both legacy and new keys
       const sT = (localStorage.getItem('pref.showTeam') ?? localStorage.getItem('tp'))
       const sC = (localStorage.getItem('pref.showComments') ?? localStorage.getItem('comments'))
+        const sA = (localStorage.getItem('pref.showArtifacts') ?? localStorage.getItem('artifacts'))
+        const sN = (localStorage.getItem('pref.showNiicDate') ?? localStorage.getItem('showNiicDate'))
       if (sT !== null) setShowTeam(sT === 'true')
       if (sC !== null) setShowComments(sC === 'true')
+        if (sA !== null) setShowArtifacts(sA === 'true')
+        if (sN !== null) setShowNiicDate(sN === 'true')
     } catch {}
   }, [])
 
@@ -155,6 +164,20 @@ export default function OnePagerPage() {
       localStorage.setItem('comments', String(showComments))
     } catch {}
   }, [showComments])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('pref.showArtifacts', String(showArtifacts))
+      localStorage.setItem('artifacts', String(showArtifacts))
+    } catch {}
+  }, [showArtifacts])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('pref.showNiicDate', String(showNiicDate))
+      localStorage.setItem('showNiicDate', String(showNiicDate))
+    } catch {}
+  }, [showNiicDate])
 
   const isInitialMount = useRef(true)
   const lastSavedData = useRef<string>("")
@@ -205,21 +228,51 @@ export default function OnePagerPage() {
     input.click()
   }, [toast])
 
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false)
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
+
   const handleExportPDF = useCallback(() => {
-    setScreenshotMode(true);
-    const onAfter = () => {
-      setScreenshotMode(false);
-      window.removeEventListener('afterprint', onAfter);
-    };
-    window.addEventListener('afterprint', onAfter);
+    setPdfDialogOpen(true)
+  }, [])
 
-    withHiddenDuringExport(() => { window.print(); });
+  const handlePDFExport = useCallback(async (type: "paged" | "full") => {
+    setPdfDialogOpen(false)
+    setIsExportingPdf(true)
+    setScreenshotMode(true)
 
-    toast({
-      title: "Exporting to PDF",
-      description: "Use your browser print dialog to save as PDF",
-    });
-  }, [toast]);
+    try {
+      // Give CSS time to apply screenshot-mode
+      await new Promise((r) => setTimeout(r, 100))
+
+      if (type === 'full') {
+        // Full page: use html-to-image + jsPDF (single page, no breaks)
+        // Allow tests to stub window.exportFullPagePDF for headless runs
+        if ((window as any).exportFullPagePDF) {
+          await (window as any).exportFullPagePDF('onepagerRoot', 'mars-onepager-full.pdf')
+        } else {
+          await (await import('@/lib/pdf-export')).exportFullPagePDF('onepagerRoot', 'mars-onepager-full.pdf')
+        }
+
+        toast({ title: 'PDF Exported', description: 'Full-page PDF saved successfully' })
+      } else {
+        // Paged: use browser print dialog (multi-page with breaks)
+        const onAfter = () => {
+          setScreenshotMode(false)
+          window.removeEventListener('afterprint', onAfter)
+        }
+        window.addEventListener('afterprint', onAfter);
+        await (await import('@/lib/pdf-export')).exportPagedPDF()
+
+        toast({ title: 'Exporting to PDF', description: 'Use browser dialog to save as paged PDF' })
+      }
+    } catch (error) {
+      console.error('PDF export error:', error)
+      toast({ variant: 'destructive', title: 'PDF Export Failed', description: 'Could not generate PDF. Please try again.' })
+    } finally {
+      setScreenshotMode(false)
+      setIsExportingPdf(false)
+    }
+  }, [toast])
 
   const handleExportHTML = useCallback(async () => {
     try {
@@ -657,6 +710,8 @@ export default function OnePagerPage() {
                   canUndo={history ? canUndo(history) : false}
                   canRedo={history ? canRedo(history) : false}
                 />
+
+                <PDFExportDialog open={pdfDialogOpen} onOpenChange={setPdfDialogOpen} onExport={handlePDFExport} isLoading={isExportingPdf} />
                 <div className="print:hidden export-hidden">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -684,6 +739,20 @@ export default function OnePagerPage() {
                           <Switch checked={showComments} onCheckedChange={(v) => setShowComments(!!v)} />
                         </label>
                       </DropdownMenuItem>
+
+                      <DropdownMenuItem asChild>
+                        <label className="flex items-center justify-between w-full cursor-pointer">
+                          <span className="text-sm">Artifacts</span>
+                          <Switch checked={showArtifacts} onCheckedChange={(v) => setShowArtifacts(!!v)} />
+                        </label>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem asChild>
+                        <label className="flex items-center justify-between w-full cursor-pointer">
+                          <span className="text-sm">Show NIIC Date</span>
+                          <Switch checked={showNiicDate} onCheckedChange={(v) => setShowNiicDate(!!v)} />
+                        </label>
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -695,7 +764,12 @@ export default function OnePagerPage() {
 
       <div className="max-w-[1600px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-5">
         <div className="space-y-3 sm:space-y-4 md:space-y-5" data-content-area>
-          <Header data={data} setData={setData} />
+          <Header data={data} setData={setData} showNiicDate={showNiicDate} />
+
+          <div className="flex flex-col md:flex-row gap-4 mt-4">
+            <KpiStrip data={data} setData={setData} className="flex-1 min-w-[300px]" />
+            <RolesStrip data={data} setData={setData} className="flex-1 min-w-[300px]" />
+          </div>
 
           <GoalDescription data={data} setData={setData} />
 
@@ -717,11 +791,33 @@ export default function OnePagerPage() {
 
           <DoneNext data={data} setData={setData} />
 
-          {showTeam && (
-            <TeamPerformance data={data} setData={setData} />
-          )}
+          {/* Adaptive layout for Team / Risks / Artifacts according to visibility flags */}
+          <div className={
+            showTeam && showArtifacts ? "grid md:grid-cols-3 gap-5 items-start md:items-stretch" :
+            showTeam && !showArtifacts ? "grid md:grid-cols-2 gap-5 items-start md:items-stretch" :
+            !showTeam && showArtifacts ? "grid md:grid-cols-2 gap-5 items-start md:items-stretch" :
+            ""
+          }>
+            {showTeam && (
+              <TeamPerformance data={data} setData={setData} />
+            )}
 
-          <RisksArtifacts data={data} setData={setData} />
+            {/* Risks is always present */}
+            <div className={showTeam && showArtifacts ? "" : "col-span-1"}>
+              <RisksCardInline data={data} setData={setData} />
+            </div>
+
+            {showArtifacts && (
+              <div>
+                <ArtifactsCardInline data={data} setData={setData} />
+              </div>
+            )}
+
+            {/* Single-element fallbacks */}
+            {!showTeam && !showArtifacts && (
+              <RisksCardInline data={data} setData={setData} />
+            )}
+          </div>
 
           {showComments && (
             <Comments data={data} setData={setData} />

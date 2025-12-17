@@ -80,14 +80,14 @@ export function TeamPerformance({ data, setData }: TeamPerformanceProps) {
   }
 
   return (
-    <Card className="p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow animate-slide-up">
+    <Card className="p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow animate-slide-up h-full">
       <h3 className="text-base md:text-lg font-bold text-[var(--mars-blue-primary)] mb-3">Team Performance</h3>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 gap-2 align-top">
         {(data.teamMetrics ?? []).map((metric, idx) => (
           <div
             key={idx}
-            className={`rounded-lg px-2.5 py-1.5 min-w-[80px] relative group cursor-pointer transition-all hover:scale-105 ${
+            className={`w-full rounded-lg px-2.5 py-1.5 relative group cursor-pointer transition-all hover:scale-105 ${
               metric.color === "green"
                 ? "bg-[var(--status-green)]/20 border-2 border-[var(--status-green)]"
                 : metric.color === "yellow"
@@ -102,7 +102,7 @@ export function TeamPerformance({ data, setData }: TeamPerformanceProps) {
               variant="ghost"
               size="icon"
               onClick={() => removeMetric(idx)}
-              className="absolute -top-2 -right-2 w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="absolute -top-2 -right-2 w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground hover:bg-destructive/90 export-hidden"
             >
               <X className="w-3 h-3" />
             </Button>
@@ -124,7 +124,7 @@ export function TeamPerformance({ data, setData }: TeamPerformanceProps) {
         onClick={addMetric}
         variant="outline"
         size="sm"
-        className="mt-3 gap-2 hover:bg-[var(--mars-blue-primary)] hover:text-white transition-colors bg-transparent text-xs h-8"
+        className="mt-3 gap-2 hover:bg-[var(--mars-blue-primary)] hover:text-white transition-colors bg-transparent text-xs h-8 export-hidden"
       >
         <Plus className="w-3 h-3" />
         Add Metric
@@ -132,7 +132,7 @@ export function TeamPerformance({ data, setData }: TeamPerformanceProps) {
 
       {contextMenu && (
         <div
-          className="fixed bg-white shadow-lg rounded-lg py-1 z-50 min-w=[160px] border border-gray-200"
+          className="fixed bg-white shadow-lg rounded-lg py-1 z-50 min-w=[160px] border border-gray-200 text-gray-900 export-hidden"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >

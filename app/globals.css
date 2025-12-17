@@ -263,6 +263,21 @@
   display: none !important;
 }
 
+/* Hide anything explicitly marked for export hiding */
+.screenshot-mode .export-hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Hide scrollbars globally in screenshot mode for a clean capture */
+.screenshot-mode {
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
+}
+.screenshot-mode ::-webkit-scrollbar {
+  display: none !important; /* Webkit */
+}
+
 /* Ensure screenshots and prints look clean on all platforms */
 @media screen and (prefers-reduced-motion: no-preference) {
   .screenshot-mode * {
@@ -270,6 +285,51 @@
   }
 }
 
+/* Full page PDF export styles */
+@media print {
+  /* Prevent page breaks inside containers */
+  .no-break {
+    page-break-inside: avoid;
+  }
+
+  /* Full page mode: no page breaks */
+  body.pdf-full-page {
+    height: auto;
+    overflow: visible;
+  }
+
+  body.pdf-full-page * {
+    page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  /* Hide scrollbars in print */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  #onepagerRoot {
+    margin: 0;
+    padding: 0;
+  }
+
+  body.pdf-full-page #onepagerRoot {
+    page-break-inside: avoid;
+    height: auto;
+  }
+}
 /* Safety override for cross-platform consistent colors */
 .screenshot-mode body {
   -webkit-print-color-adjust: exact !important;

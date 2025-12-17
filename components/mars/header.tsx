@@ -7,9 +7,15 @@ import type { OnePagerData, StatusColor } from "@/types/onepager"
 interface HeaderProps {
   data: OnePagerData
   setData: (data: OnePagerData) => void
+  /**
+   * Опциональный флаг для dev-ветки:
+   * если нужно прятать NIIC через настройки видимости.
+   * В main можно не передавать — по умолчанию true.
+   */
+  showNiicDate?: boolean
 }
 
-export function Header({ data, setData }: HeaderProps) {
+export function Header({ data, setData, showNiicDate = true }: HeaderProps) {
   const cycleStatus = (current: StatusColor): StatusColor => {
     const cycle: StatusColor[] = ["green", "yellow", "red"]
     const idx = cycle.indexOf(current)
@@ -17,7 +23,7 @@ export function Header({ data, setData }: HeaderProps) {
   }
 
   const getStatusColor = (status: StatusColor) => {
-    const colors = {
+    const colors: Record<StatusColor, string> = {
       green: "bg-[var(--status-green)]",
       yellow: "bg-[var(--status-yellow)]",
       red: "bg-[var(--status-red)]",
@@ -26,7 +32,7 @@ export function Header({ data, setData }: HeaderProps) {
   }
 
   const getStatusLabel = (status: StatusColor) => {
-    const labels = {
+    const labels: Record<StatusColor, string> = {
       green: "On Track",
       yellow: "At Risk",
       red: "Delayed",
@@ -35,86 +41,73 @@ export function Header({ data, setData }: HeaderProps) {
   }
 
   return (
-    <Card className="bg-[var(--mars-blue-primary)] text-white p-3 md:p-4 shadow-lg animate-slide-up">
-      <div className="space-y-3">
-        {/* Top row */}
-        <div className="flex flex-wrap gap-3 items-start justify-between">
-          <div className="flex-1 min-w-[200px]">
-            <div className="text-xl font-bold tracking-wider mb-1">MARS</div>
+    <Card className="relative bg-[var(--mars-blue-primary)] text-white p-4 md:p-5 shadow-lg animate-slide-up overflow-hidden">
+      {/* Основная адаптивная сетка: 1 колонка на мобильных, 3 смысловые зоны на md+ */}
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)_minmax(0,1.5fr)] gap-4 md:gap-6">
+
+        {/* ЛЕВАЯ ЗОНА: Название проекта + NIIC Date */}
+        <div className="flex flex-col justify-center gap-3 min-w-0">
+          <div className="space-y-1">
             <Input
               value={data.projectName}
               onChange={(e) => setData({ ...data, projectName: e.target.value })}
-              className="text-lg font-bold bg-transparent border-none text-white placeholder:text-white/60 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="text-xl md:text-2xl font-bold bg-transparent border-none text-white placeholder:text-white/60 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 truncate"
               placeholder="Project Name"
             />
-            <div className="flex items-center gap-2 mt-1.5 text-xs">
-              <span className="opacity-80 font-semibold">NIIC Date:</span>
-              <Input
-                type="month"
-                value={data.niicDate}
-                onChange={(e) => setData({ ...data, niicDate: e.target.value })}
-                className="bg-white/15 border-none text-white w-36 h-6 px-2 rounded text-xs"
-              />
-            </div>
           </div>
 
-          <div
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/15 cursor-pointer hover:bg-white/25 transition-colors backdrop-blur-sm"
-            onClick={() => setData({ ...data, projectStatus: cycleStatus(data.projectStatus) })}
-          >
-            <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(data.projectStatus)} shadow-md`} />
-            <div className="flex flex-col">
-              <span className="text-[8px] uppercase opacity-70 font-semibold leading-tight">Project Status</span>
-              <span className="text-[11px] font-bold leading-tight">{getStatusLabel(data.projectStatus)}</span>
+          {showNiicDate && (
+            <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm">
+              <span className="opacity-80 font-semibold">NIIC Date:</span>
+              <Input
+                type="date"
+                value={data.niicDate ?? ''}
+                onChange={(e) => setData({ ...data, niicDate: e.target.value })}
+                className="bg-white/15 border-none text-white w-36 h-7 px-2 rounded text-xs focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
             </div>
+          )}
+
+          <div className="flex items-center gap-2 text-xs md:text-sm">
+            <span className="font-semibold">Status Date:</span>
+            <Input
+              type="date"
+              value={data.statusDate ?? ''}
+              onChange={(e) => setData({ ...data, statusDate: e.target.value })}
+              className="bg-white/10 border-none text-white w-36 h-7 px-2 rounded text-xs focus-visible:ring-0 focus-visible:ring-white/30"
+            />
           </div>
         </div>
 
-        {/* KPIs and Roles */}
-        <div className="flex flex-wrap gap-3 items-start">
-          <div className="flex flex-wrap gap-2">
-            {data.kpis.map((kpi, idx) => (
-              <div key={idx} className="bg-white/15 rounded-lg px-2.5 py-1.5 min-w-[80px] text-center backdrop-blur-sm">
-                <Input
-                  value={kpi.value}
-                  onChange={(e) => {
-                    const newKpis = [...data.kpis]
-                    newKpis[idx].value = e.target.value
-                    setData({ ...data, kpis: newKpis })
-                  }}
-                  className="text-base font-bold bg-transparent border-none text-white text-center p-0 h-auto mb-0.5 focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-                <Input
-                  value={kpi.label}
-                  onChange={(e) => {
-                    const newKpis = [...data.kpis]
-                    newKpis[idx].label = e.target.value
-                    setData({ ...data, kpis: newKpis })
-                  }}
-                  className="text-[8px] uppercase opacity-80 bg-transparent border-none text-white text-center p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-              </div>
-            ))}
-          </div>
+        {/* (removed central traffic-light for repositioning) */}
+        <div />
 
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(data.roles).map(([key, value]) => (
-              <div key={key} className="bg-white/15 rounded-lg px-2.5 py-1.5 min-w-[100px] backdrop-blur-sm">
-                <div className="text-[8px] uppercase opacity-80 mb-0.5 leading-tight">
-                  {key === "sponsor" ? "Sponsor" : key === "productOwner" ? "Product Owner" : "Project Manager"}
-                </div>
-                <Input
-                  value={value}
-                  onChange={(e) => {
-                    setData({
-                      ...data,
-                      roles: { ...data.roles, [key]: e.target.value },
-                    })
-                  }}
-                  className="text-[11px] font-semibold bg-transparent border-none text-white p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-              </div>
-            ))}
+      {/* Traffic light moved to bottom-right */}
+      <div className="absolute bottom-4 right-4 z-30">
+        <button
+          onClick={() => setData({ ...data, projectStatus: cycleStatus(data.projectStatus) })}
+          className="group relative flex items-center gap-3 px-4 py-2 rounded-full bg-[#002b4d]/60 hover:bg-[#002b4d]/80 border border-white/10 transition-all active:scale-95"
+          title="Click to toggle status"
+        >
+          <div className={`w-3.5 h-3.5 rounded-full transition-colors duration-300 ${getStatusColor(data.projectStatus)}`} />
+          <div className="flex flex-col items-start leading-none">
+            <span className="text-[9px] uppercase tracking-widest text-blue-200 font-bold mb-0.5">Project Status</span>
+            <span className="text-sm font-bold text-white">{getStatusLabel(data.projectStatus)}</span>
+          </div>
+        </button>
+      </div>
+
+        {/* ПРАВАЯ ЗОНА: Лого MARS */}
+        <div className="flex flex-col items-end gap-3 min-w-0">
+          <div className="text-3xl md:text-4xl font-black tracking-[0.5em] leading-none text-white/90 uppercase">
+            <span className="inline-block translate-x-[0.35em]">MARS</span>
+          </div>
+        </div>
+
+        {/* ПРАВАЯ ЗОНА: Лого MARS */}
+        <div className="flex flex-col items-end gap-3 min-w-0">
+          <div className="text-3xl md:text-4xl font-black tracking-[0.5em] leading-none text-white uppercase">
+            <span data-testid="header-logo" className="inline-block translate-x-[0.35em]">MARS</span>
           </div>
         </div>
       </div>

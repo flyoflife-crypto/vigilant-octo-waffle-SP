@@ -34,21 +34,38 @@ export const QUARTER_PERIODS: number[][] = [
 
 // --- Helper: Create Default Data ---
 function createDefaultData(title: string): OnePagerData {
+  // Generate 12 month labels for year gantt (top: month, bottom: period P and quarter)
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  const yearLabels = months.map((m, idx) => {
+    const period = String(idx + 1).padStart(2, "0") // P01..P12
+    const quarter = Math.floor(idx / 3) + 1
+    return { top: m, bottom: `P${period} | Q${quarter}` }
+  })
+
+  // Calculate current month for nowCol and fraction within month
+  const now = new Date()
+  const currentMonth = now.getMonth()
+  const startOfMonth = new Date(now.getFullYear(), currentMonth, 1)
+  const daysInMonth = new Date(now.getFullYear(), currentMonth + 1, 0).getDate()
+  const dayOfMonth = now.getDate() - 1
+  const currentMonthFrac = Math.min(1, Math.max(0, dayOfMonth / Math.max(1, daysInMonth)))
+
   return {
     projectName: title,
     niicDate: new Date().toISOString().slice(0, 7),
+    statusDate: new Date().toISOString().slice(0, 10),
     projectStatus: "green",
     kpis: [
       { label: "Budget", value: "0", color: "green" },
       { label: "Progress", value: "0%", color: "yellow" }
     ],
     yearGantt: {
-      labels: [], 
+      labels: yearLabels,
       rows: ["Stream 1", "Stream 2"], 
       bars: [], 
       milestones: [], 
-      nowCol: 0, 
-      nowFrac: 0 
+      nowCol: currentMonth, 
+      nowFrac: currentMonthFrac 
     },
     quarterGantt: {
       labels: [], 
@@ -65,10 +82,14 @@ function createDefaultData(title: string): OnePagerData {
     risks: [],
     artifacts: [],
     comments: "",
-    roles: { sponsor: "", productOwner: "", projectManager: "" },
+    roles: { sponsor: null, productOwner: null, projectManager: null },
+    extraRoles: [],
+    roleLabels: {},
     goal: "",
     description: "",
-    extraSections: []
+    extraSections: [],
+    showArtifacts: true,
+    showNiicDate: true,
   }
 }
 
@@ -113,19 +134,46 @@ export async function getProjectById(id: string): Promise<Project | null> {
 export async function saveProject(project: Project): Promise<Project> {
   const projects = getLocalProjects()
   
-  const updatedProject = {
+  // CRITICAL FIX: Never generate a new ID for an existing project.
+  // Only generate an ID when this is a brand-new project (no createdAt and no id).
+  let projectId = project.id
+
+  if (!projectId) {
+    if (!project.createdAt) {
+      // New project, generate ID
+      projectId = Date.now().toString()
+      console.log('➕ Generating new project ID:', projectId)
+    } else {
+      // Project has createdAt but lost its ID - attempt to recover by matching createdAt + name
+      const match = projects.find(p => p.createdAt === project.createdAt && p.name === project.name)
+      if (match) {
+        projectId = match.id
+        console.log('✅ Recovered missing project ID:', projectId)
+      } else {
+        // As fallback generate a new ID but log error - this should be rare
+        projectId = Date.now().toString()
+        console.error('❌ Project missing ID and recovery failed - generating new ID:', projectId)
+      }
+    }
+  }
+
+  const updatedProject: Project = {
     ...project,
-    id: project.id || Date.now().toString(), // Ensure ID exists
+    id: projectId!,
+    createdAt: project.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
 
   const index = projects.findIndex(p => p.id === updatedProject.id)
   
   if (index >= 0) {
+    // Update existing project
     projects[index] = updatedProject
+    console.log(`📝 Updated project: ${updatedProject.name} (ID: ${updatedProject.id})`)
   } else {
-    if (!updatedProject.createdAt) updatedProject.createdAt = new Date().toISOString()
+    // Add new project
     projects.push(updatedProject)
+    console.log(`➕ Created new project: ${updatedProject.name} (ID: ${updatedProject.id})`)
   }
 
   saveLocalProjects(projects)
