@@ -40,10 +40,15 @@ jobs:
       - name: Create ZIP archive
         shell: pwsh
         run: |
-          $version = (Get-Content package.json | ConvertFrom-Json).version
-          Write-Host "Creating ZIP for version $version"
-          Compress-Archive -Path dist/win-unpacked/* -DestinationPath "dist/Mars-OnePager-$version-Windows-Portable.zip" -Force
-          Write-Host "Created: dist/Mars-OnePager-$version-Windows-Portable.zip"
+          try {
+            $version = (Get-Content package.json | ConvertFrom-Json).version
+            Write-Host "Creating ZIP for version $version"
+            Compress-Archive -Path dist/win-unpacked/* -DestinationPath "dist/Mars-OnePager-$version-Windows-Portable.zip" -Force
+            Write-Host "Created: dist/Mars-OnePager-$version-Windows-Portable.zip"
+          } catch {
+            Write-Error "Failed to create ZIP archive: $_"
+            exit 1
+          }
 
       - name: Upload unpacked directory (Dev)
         if: github.ref == 'refs/heads/Dev'
