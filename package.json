@@ -107,6 +107,20 @@
     "mac": {
       "target": [
         {
+          "target": "portable",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "artifactName": "Mars-OnePager-${version}-Windows-Portable.exe",
+      "requestedExecutionLevel": "asInvoker",
+      "verifyUpdateCodeSignature": false
+    },
+    "mac": {
+      "target": [
+        {
           "target": "dmg",
           "arch": [
             "x64",
