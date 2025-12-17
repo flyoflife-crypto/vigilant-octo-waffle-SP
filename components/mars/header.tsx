@@ -43,9 +43,9 @@ export function Header({ data, setData, showNiicDate = true }: HeaderProps) {
   return (
     <Card className="relative bg-[var(--mars-blue-primary)] text-white p-4 md:p-5 shadow-lg animate-slide-up overflow-hidden">
       {/* Основная адаптивная сетка: 1 колонка на мобильных, 3 смысловые зоны на md+ */}
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)_minmax(0,1.5fr)] gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_auto_minmax(0,1fr)] gap-4 md:gap-6 items-center">
 
-        {/* ЛЕВАЯ ЗОНА: Название проекта + NIIC Date */}
+        {/* ЛЕВАЯ ЗОНА: Название проекта + Даты */}
         <div className="flex flex-col justify-center gap-3 min-w-0">
           <div className="space-y-1">
             <Input
@@ -79,35 +79,25 @@ export function Header({ data, setData, showNiicDate = true }: HeaderProps) {
           </div>
         </div>
 
-        {/* (removed central traffic-light for repositioning) */}
-        <div />
-
-      {/* Traffic light moved to bottom-right */}
-      <div className="absolute bottom-4 right-4 z-30">
-        <button
-          onClick={() => setData({ ...data, projectStatus: cycleStatus(data.projectStatus) })}
-          className="group relative flex items-center gap-3 px-4 py-2 rounded-full bg-[#002b4d]/60 hover:bg-[#002b4d]/80 border border-white/10 transition-all active:scale-95"
-          title="Click to toggle status"
-        >
-          <div className={`w-3.5 h-3.5 rounded-full transition-colors duration-300 ${getStatusColor(data.projectStatus)}`} />
-          <div className="flex flex-col items-start leading-none">
-            <span className="text-[9px] uppercase tracking-widest text-blue-200 font-bold mb-0.5">Project Status</span>
-            <span className="text-sm font-bold text-white">{getStatusLabel(data.projectStatus)}</span>
-          </div>
-        </button>
-      </div>
-
-        {/* ПРАВАЯ ЗОНА: Лого MARS */}
-        <div className="flex flex-col items-end gap-3 min-w-0">
-          <div className="text-3xl md:text-4xl font-black tracking-[0.5em] leading-none text-white/90 uppercase">
-            <span className="inline-block translate-x-[0.35em]">MARS</span>
-          </div>
+        {/* ЦЕНТРАЛЬНАЯ ЗОНА: Светофор статуса */}
+        <div className="flex justify-center">
+          <button
+            onClick={() => setData({ ...data, projectStatus: cycleStatus(data.projectStatus) })}
+            className="group flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-all active:scale-95"
+            title="Click to toggle status"
+          >
+            <div className={`w-3.5 h-3.5 rounded-full transition-colors duration-300 ${getStatusColor(data.projectStatus)}`} />
+            <div className="flex flex-col items-start leading-none">
+              <span className="text-[9px] uppercase tracking-widest text-white/70 font-bold mb-0.5">Project Status</span>
+              <span className="text-sm font-bold text-white">{getStatusLabel(data.projectStatus)}</span>
+            </div>
+          </button>
         </div>
 
         {/* ПРАВАЯ ЗОНА: Лого MARS */}
-        <div className="flex flex-col items-end gap-3 min-w-0">
-          <div className="text-3xl md:text-4xl font-black tracking-[0.5em] leading-none text-white uppercase">
-            <span data-testid="header-logo" className="inline-block translate-x-[0.35em]">MARS</span>
+        <div className="flex justify-end">
+          <div className="text-3xl md:text-4xl font-black tracking-[0.5em] leading-none text-white/90 uppercase">
+            <span className="inline-block translate-x-[0.35em]">MARS</span>
           </div>
         </div>
       </div>
