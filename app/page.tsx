@@ -118,6 +118,7 @@ export default function OnePagerPage() {
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [projectsLoaded, setProjectsLoaded] = useState(false)
   const [data, setData] = useState<OnePagerData | null>(null)
   const [history, setHistory] = useState<HistoryState | null>(null)
   const [showTopMenu, setShowTopMenu] = useState(false)
@@ -307,12 +308,7 @@ export default function OnePagerPage() {
         if (isMounted) {
           console.log(`✅ Loaded ${loadedProjects.length} projects`)
           setProjects(loadedProjects)
-
-          const activeId = getActiveProjectId()
-          if (activeId) {
-            const active = loadedProjects.find((p) => p.id === activeId)
-            if (active) setCurrentProject(active)
-          }
+          setProjectsLoaded(true)
         }
       } catch (error) {
         console.error("❌ Critical Load Error:", error)
@@ -396,14 +392,14 @@ export default function OnePagerPage() {
       }
     }
 
-    if (!data && !currentProject) {
+    if (!data && !currentProject && projectsLoaded) {
       void initializeProject()
     }
 
     return () => {
       cancelled = true
     }
-  }, [projects, data, currentProject, toast])
+  }, [projects, data, currentProject, projectsLoaded, toast])
 
   useEffect(() => {
     if (isInitialMount.current || !currentProject || !data || !history) return

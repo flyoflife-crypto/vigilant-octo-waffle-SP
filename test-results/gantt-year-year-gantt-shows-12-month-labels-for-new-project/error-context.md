@@ -1,0 +1,372 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - button "Projects (2)" [ref=e8]:
+          - img
+          - text: Projects (2)
+        - generic [ref=e10]:
+          - heading "Project Manager" [level=3] [ref=e11]
+          - generic [ref=e12]:
+            - textbox "New project name..." [ref=e13]
+            - button "Create" [active] [ref=e14]:
+              - img
+              - text: Create
+          - generic [ref=e15]:
+            - generic [ref=e17]:
+              - 'button "My First Project Updated: 12/19/2025" [ref=e18]':
+                - generic [ref=e19]: My First Project
+                - generic [ref=e20]: "Updated: 12/19/2025"
+              - generic [ref=e21]:
+                - button "Duplicate project" [ref=e22]:
+                  - img
+                - button "Delete project" [ref=e23]:
+                  - img
+            - generic [ref=e25]:
+              - 'button "YearGantt Test Updated: 12/19/2025" [ref=e26]':
+                - generic [ref=e27]: YearGantt Test
+                - generic [ref=e28]: "Updated: 12/19/2025"
+              - generic [ref=e29]:
+                - button "Duplicate project" [ref=e30]:
+                  - img
+                - button "Delete project" [ref=e31]:
+                  - img
+      - generic [ref=e32]:
+        - button "Info" [ref=e33]:
+          - img
+          - generic [ref=e34]: Info
+        - button "Undo" [disabled]:
+          - img
+          - generic: Undo
+        - button "Redo" [disabled]:
+          - img
+          - generic: Redo
+        - button "Import" [ref=e35]:
+          - img
+          - generic [ref=e36]: Import
+        - button "JSON" [ref=e37]:
+          - img
+          - generic [ref=e38]: JSON
+        - button "PNG" [ref=e39]:
+          - img
+          - generic [ref=e40]: PNG
+        - button "PDF" [ref=e41]:
+          - img
+          - generic [ref=e42]: PDF
+      - button "Settings" [ref=e44]:
+        - img [ref=e45]
+    - generic [ref=e49]:
+      - generic [ref=e50]:
+        - img "MARS" [ref=e52]
+        - textbox "Project Name" [ref=e54]: YearGantt Test
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - generic [ref=e57]:
+              - generic [ref=e58]: "NIIC Date:"
+              - textbox [ref=e59]
+            - generic [ref=e60]:
+              - generic [ref=e61]: "Status Date:"
+              - textbox [ref=e62]
+          - button "Project Status On Track" [ref=e63]:
+            - generic [ref=e65]:
+              - generic [ref=e66]: Project Status
+              - generic [ref=e67]: On Track
+      - generic [ref=e68]:
+        - generic [ref=e69]:
+          - generic [ref=e70]: Key Metrics
+          - generic [ref=e71]:
+            - generic [ref=e72]:
+              - textbox [ref=e73]: "1000"
+              - textbox [ref=e74]: Money Plan
+              - button "Remove" [ref=e75]:
+                - img [ref=e76]
+            - generic [ref=e79]:
+              - textbox [ref=e80]: "850"
+              - textbox [ref=e81]: Money Fact
+              - button "Remove" [ref=e82]:
+                - img [ref=e83]
+            - generic [ref=e86]:
+              - textbox [ref=e87]: "150"
+              - textbox [ref=e88]: Benefits
+              - button "Remove" [ref=e89]:
+                - img [ref=e90]
+            - button "Add" [ref=e93]:
+              - img [ref=e94]
+              - generic [ref=e95]: Add
+        - generic [ref=e96]:
+          - generic [ref=e97]: Team Roles
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - generic [ref=e101]: Sponsor
+              - textbox "Sponsor Name" [ref=e103]:
+                - /placeholder: Name...
+              - button "Remove" [ref=e104]:
+                - img [ref=e105]
+            - generic [ref=e108]:
+              - generic [ref=e110]: Product Owner
+              - textbox "PO Name" [ref=e112]:
+                - /placeholder: Name...
+              - button "Remove" [ref=e113]:
+                - img [ref=e114]
+            - generic [ref=e117]:
+              - generic [ref=e119]: Project Manager
+              - textbox "PM Name" [ref=e121]:
+                - /placeholder: Name...
+              - button "Remove" [ref=e122]:
+                - img [ref=e123]
+            - button "Add Role" [ref=e126]:
+              - img [ref=e127]
+      - generic [ref=e130]:
+        - generic [ref=e131]:
+          - heading "Goal" [level=3] [ref=e132]
+          - textbox "Project goal and objectives..." [ref=e133]: Project goal and objectives
+        - generic [ref=e134]:
+          - heading "Description" [level=3] [ref=e135]
+          - textbox "Detailed project description and context..." [ref=e136]: Detailed project description and context
+      - generic [ref=e137]:
+        - generic [ref=e138]:
+          - heading "TOTAL Plan" [level=3] [ref=e140]
+          - generic [ref=e141]:
+            - button "Add Row" [ref=e142]:
+              - img [ref=e143]
+              - text: Add Row
+            - generic [ref=e144]:
+              - generic [ref=e147]: On Track
+              - generic [ref=e150]: At Risk
+              - generic [ref=e153]: Delayed
+        - generic [ref=e156]:
+          - generic [ref=e158] [cursor=pointer]:
+            - generic [ref=e159]: Jan
+            - generic [ref=e160]: P01 | Q1
+          - generic [ref=e162] [cursor=pointer]:
+            - generic [ref=e163]: Feb
+            - generic [ref=e164]: P02 | Q1
+          - generic [ref=e166] [cursor=pointer]:
+            - generic [ref=e167]: Mar
+            - generic [ref=e168]: P03 | Q1
+          - generic [ref=e170] [cursor=pointer]:
+            - generic [ref=e171]: Apr
+            - generic [ref=e172]: P04 | Q2
+          - generic [ref=e174] [cursor=pointer]:
+            - generic [ref=e175]: May
+            - generic [ref=e176]: P05 | Q2
+          - generic [ref=e178] [cursor=pointer]:
+            - generic [ref=e179]: Jun
+            - generic [ref=e180]: P06 | Q2
+          - generic [ref=e182] [cursor=pointer]:
+            - generic [ref=e183]: Jul
+            - generic [ref=e184]: P07 | Q3
+          - generic [ref=e186] [cursor=pointer]:
+            - generic [ref=e187]: Aug
+            - generic [ref=e188]: P08 | Q3
+          - generic [ref=e190] [cursor=pointer]:
+            - generic [ref=e191]: Sep
+            - generic [ref=e192]: P09 | Q3
+          - generic [ref=e194] [cursor=pointer]:
+            - generic [ref=e195]: Oct
+            - generic [ref=e196]: P10 | Q4
+          - generic [ref=e198] [cursor=pointer]:
+            - generic [ref=e199]: Nov
+            - generic [ref=e200]: P11 | Q4
+          - generic [ref=e202] [cursor=pointer]:
+            - generic [ref=e203]: Dec
+            - generic [ref=e204]: P12 | Q4
+          - generic [ref=e206] [cursor=pointer]:
+            - generic [ref=e207]: Dec
+            - generic [ref=e208]: P13 | Q4
+        - generic [ref=e209]:
+          - generic [ref=e210]:
+            - generic [ref=e212]: Workstream 1
+            - generic [ref=e229]: Phase 1
+          - generic [ref=e231]:
+            - generic [ref=e233]: Workstream 2
+            - generic [ref=e250]: Phase 2
+          - generic [ref=e252]:
+            - generic [ref=e254]: Workstream 3
+            - generic [ref=e271]: Phase 3
+          - generic [ref=e274]: Мы здесь
+          - generic [ref=e276]: Q1 Review
+          - generic [ref=e279]: Q2 Review
+          - generic [ref=e282]: Q3 Review
+          - generic [ref=e285]: Year End
+      - generic [ref=e287]:
+        - generic [ref=e288]:
+          - generic [ref=e289]:
+            - heading "TOTAL Fact" [level=3] [ref=e290]
+            - combobox [ref=e291]:
+              - generic: Q1
+              - img
+          - generic [ref=e292]:
+            - button "Add Row" [ref=e293]:
+              - img [ref=e294]
+              - text: Add Row
+            - generic [ref=e295]:
+              - generic [ref=e298]: On Track
+              - generic [ref=e301]: At Risk
+              - generic [ref=e304]: Delayed
+        - generic [ref=e307]:
+          - generic [ref=e309] [cursor=pointer]:
+            - generic [ref=e310]: P01
+            - generic [ref=e311]: Jan | W1
+          - generic [ref=e313] [cursor=pointer]:
+            - generic [ref=e314]: P01
+            - generic [ref=e315]: Jan | W2
+          - generic [ref=e317] [cursor=pointer]:
+            - generic [ref=e318]: P01
+            - generic [ref=e319]: Jan | W3
+          - generic [ref=e321] [cursor=pointer]:
+            - generic [ref=e322]: P01
+            - generic [ref=e323]: Jan | W4
+          - generic [ref=e325] [cursor=pointer]:
+            - generic [ref=e326]: P02
+            - generic [ref=e327]: Feb | W1
+          - generic [ref=e329] [cursor=pointer]:
+            - generic [ref=e330]: P02
+            - generic [ref=e331]: Feb | W2
+          - generic [ref=e333] [cursor=pointer]:
+            - generic [ref=e334]: P02
+            - generic [ref=e335]: Feb | W3
+          - generic [ref=e337] [cursor=pointer]:
+            - generic [ref=e338]: P02
+            - generic [ref=e339]: Feb | W4
+          - generic [ref=e341] [cursor=pointer]:
+            - generic [ref=e342]: P03
+            - generic [ref=e343]: Mar | W1
+          - generic [ref=e345] [cursor=pointer]:
+            - generic [ref=e346]: P03
+            - generic [ref=e347]: Mar | W2
+          - generic [ref=e349] [cursor=pointer]:
+            - generic [ref=e350]: P03
+            - generic [ref=e351]: Mar | W3
+          - generic [ref=e353] [cursor=pointer]:
+            - generic [ref=e354]: P03
+            - generic [ref=e355]: Mar | W4
+        - generic [ref=e356]:
+          - generic [ref=e357]:
+            - generic [ref=e359]: Task 1
+            - generic [ref=e375]: Sprint 1
+          - generic [ref=e377]:
+            - generic [ref=e379]: Task 2
+            - generic [ref=e395]: Sprint 2
+          - generic [ref=e399]: Task 3
+          - generic [ref=e414]: Мы здесь
+          - generic [ref=e416]: Q1 End
+      - generic [ref=e418]:
+        - generic [ref=e419]:
+          - heading "Done (Prev Month)" [level=3] [ref=e420]
+          - generic [ref=e421]:
+            - generic [ref=e422]:
+              - textbox "Completed item..." [ref=e423]: Completed task 1
+              - button [ref=e424]:
+                - img
+            - generic [ref=e425]:
+              - textbox "Completed item..." [ref=e426]: Completed task 2
+              - button [ref=e427]:
+                - img
+          - button "Add Item" [ref=e428]:
+            - img
+            - text: Add Item
+        - generic [ref=e429]:
+          - heading "Next (Next Month)" [level=3] [ref=e430]
+          - generic [ref=e431]:
+            - generic [ref=e432]:
+              - textbox "Upcoming item..." [ref=e433]: Upcoming task 1
+              - button [ref=e434]:
+                - img
+            - generic [ref=e435]:
+              - textbox "Upcoming item..." [ref=e436]: Upcoming task 2
+              - button [ref=e437]:
+                - img
+          - button "Add Item" [ref=e438]:
+            - img
+            - text: Add Item
+      - generic [ref=e439]:
+        - generic [ref=e440]:
+          - heading "Team Performance" [level=3] [ref=e441]
+          - generic [ref=e442]:
+            - generic [ref=e443] [cursor=pointer]:
+              - button [ref=e444]:
+                - img
+              - textbox [ref=e445]: 85%
+              - textbox [ref=e446]: Velocity
+            - generic [ref=e447] [cursor=pointer]:
+              - button [ref=e448]:
+                - img
+              - textbox [ref=e449]: 92%
+              - textbox [ref=e450]: Quality
+            - generic [ref=e451] [cursor=pointer]:
+              - button [ref=e452]:
+                - img
+              - textbox [ref=e453]: 78%
+              - textbox [ref=e454]: Budget
+          - button "Add Metric" [ref=e455]:
+            - img
+            - text: Add Metric
+        - generic [ref=e457]:
+          - heading "Risks" [level=3] [ref=e458]
+          - generic [ref=e459]:
+            - generic [ref=e460]:
+              - generic [ref=e461]: Risk
+              - generic [ref=e462]: Impact
+              - generic [ref=e463]: Mitigation
+            - generic [ref=e464]:
+              - textbox "Risk description" [ref=e465]: Vendor dependency
+              - button "High" [ref=e466] [cursor=pointer]:
+                - generic [ref=e468]: High
+              - generic [ref=e469]:
+                - textbox "Mitigation plan" [ref=e470]: Multi-vendor strategy
+                - button "Remove" [ref=e471]:
+                  - img
+            - generic [ref=e472]:
+              - textbox "Risk description" [ref=e473]: Resource availability
+              - button "Medium" [ref=e474] [cursor=pointer]:
+                - generic [ref=e476]: Medium
+              - generic [ref=e477]:
+                - textbox "Mitigation plan" [ref=e478]: Cross-training team members
+                - button "Remove" [ref=e479]:
+                  - img
+          - button "Add Risk" [ref=e480]:
+            - img
+            - text: Add Risk
+        - generic [ref=e482]:
+          - heading "Artifacts" [level=3] [ref=e483]
+          - generic [ref=e484]:
+            - generic [ref=e485]:
+              - textbox "Artifact label or link" [ref=e486]: 📄 Passport
+              - button "Remove" [ref=e487]:
+                - img
+            - generic [ref=e488]:
+              - textbox "Artifact label or link" [ref=e489]: 👥 Team
+              - button "Remove" [ref=e490]:
+                - img
+            - generic [ref=e491]:
+              - textbox "Artifact label or link" [ref=e492]: 📋 Task Tracking
+              - button "Remove" [ref=e493]:
+                - img
+            - generic [ref=e494]:
+              - textbox "Artifact label or link" [ref=e495]: 📑 NIIC Presentation
+              - button "Remove" [ref=e496]:
+                - img
+          - button "Add Artifact" [ref=e497]:
+            - img
+            - text: Add Artifact
+      - generic [ref=e498]:
+        - heading "Comments" [level=3] [ref=e499]
+        - textbox "Additional comments and notes..." [ref=e500]
+      - button "Add Section" [ref=e502]:
+        - img
+        - text: Add Section
+  - region "Notifications (F8)":
+    - list [ref=e504]:
+      - listitem [ref=e505]:
+        - generic [ref=e506]:
+          - generic [ref=e507]: Project created
+          - generic [ref=e508]: Created new project "YearGantt Test"
+        - button [ref=e509]:
+          - img [ref=e510]
+  - alert [ref=e514]
+  - status [ref=e515]: Notification Project createdCreated new project "YearGantt Test"
+```
