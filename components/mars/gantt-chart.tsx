@@ -908,8 +908,8 @@ export function GanttChart({ type, title, data, onChange, selectedQuarter, onQua
               }
             }}
           >
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-[var(--mars-blue-primary)] whitespace-nowrap bg-white px-2 py-0.5 rounded shadow-sm border border-[var(--mars-blue-primary)]">
-              Мы здесь
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-[var(--mars-blue-primary)] whitespace-nowrap bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded shadow-sm border border-[var(--mars-blue-primary)]">
+              We are here
             </div>
           </div>
         )}
