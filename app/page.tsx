@@ -521,6 +521,31 @@ export default function OnePagerPage() {
     [toast],
   )
 
+  const handleCreateFromTemplate = useCallback(
+    async (template: any) => {
+      try {
+        const newProject = {
+          ...createNewProject(template.name),
+          data: structuredClone(template.data),
+        }
+        const savedProject = await saveProject(newProject)
+        setCurrentProject(savedProject)
+        setData(savedProject.data)
+        setActiveProjectId(savedProject.id)
+        setHistory(createHistoryState(savedProject.data))
+        lastSavedData.current = JSON.stringify(savedProject.data)
+        toast({
+          title: "Project created from template",
+          description: `Created "${template.name}"`,
+        })
+      } catch (error) {
+        console.error(error)
+        toast({ variant: "destructive", title: "Failed to create project from template" })
+      }
+    },
+    [toast],
+  )
+
   const getQuarterGanttData = useCallback((): GanttData => {
     if (!data) return { labels: [], rows: [], bars: [], milestones: [], nowCol: 0, nowFrac: 0 }
 
@@ -734,6 +759,7 @@ export default function OnePagerPage() {
                   onSelectProject={handleSelectProject}
                   onCreateNew={handleCreateNew}
                   onDuplicate={handleDuplicate}
+                  onCreateFromTemplate={handleCreateFromTemplate}
                 />
 
                 <TopButtons
