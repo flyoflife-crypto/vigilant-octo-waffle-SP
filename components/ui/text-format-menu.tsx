@@ -27,7 +27,7 @@ export function TextFormatMenu({ onFormat, position, onClose }: TextFormatMenuPr
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-1 flex gap-1"
+      className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-1 flex gap-1 text-gray-900"
       style={{ left: position.x, top: position.y }}
     >
       <Button

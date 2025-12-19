@@ -157,7 +157,7 @@ export function ExtraSections({ data, setData }: ExtraSectionsProps) {
             variant="ghost"
             size="icon"
             onClick={() => removeSection(section.id)}
-            className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity export-hidden"
           >
             <X className="w-4 h-4" />
           </Button>
@@ -181,7 +181,7 @@ export function ExtraSections({ data, setData }: ExtraSectionsProps) {
                   variant="ghost"
                   size="icon"
                   onClick={() => removeItem(section.id, idx)}
-                  className="opacity-0 group-hover/item:opacity-100 transition-opacity"
+                  className="opacity-0 group-hover/item:opacity-100 transition-opacity export-hidden"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -193,7 +193,7 @@ export function ExtraSections({ data, setData }: ExtraSectionsProps) {
             onClick={() => addItem(section.id)}
             variant="outline"
             size="sm"
-            className="mt-4 gap-2 hover:bg-[var(--mars-blue-primary)] hover:text-white transition-colors"
+            className="mt-4 gap-2 hover:bg-[var(--mars-blue-primary)] hover:text-white transition-colors export-hidden"
           >
             <Plus className="w-4 h-4" />
             Add Item
@@ -204,7 +204,7 @@ export function ExtraSections({ data, setData }: ExtraSectionsProps) {
       <Button
         onClick={addSection}
         variant="outline"
-        className="w-full gap-2 hover:bg-[var(--mars-blue-primary)] hover:text-white transition-colors bg-transparent"
+        className="w-full gap-2 hover:bg-[var(--mars-blue-primary)] hover:text-white transition-colors bg-transparent export-hidden"
       >
         <Plus className="w-4 h-4" />
         Add Section

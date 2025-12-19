@@ -1,6 +1,6 @@
 import type { OnePagerData } from "@/types/onepager"
 
-const MAX_HISTORY = 10
+const MAX_HISTORY = 25
 
 export interface HistoryState {
   past: OnePagerData[]

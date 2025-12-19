@@ -199,7 +199,7 @@ export function DoneNext({ data, setData }: DoneNextProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => removeDone(idx)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 export-hidden"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -210,7 +210,7 @@ export function DoneNext({ data, setData }: DoneNextProps) {
           onClick={addDone}
           variant="outline"
           size="sm"
-          className="mt-4 gap-2 hover:bg-[var(--mars-blue-primary)] hover:text-white transition-colors bg-transparent"
+          className="mt-4 gap-2 hover:bg-[var(--mars-blue-primary)] hover:text-white transition-colors bg-transparent export-hidden"
         >
           <Plus className="w-4 h-4" />
           Add Item
@@ -233,7 +233,7 @@ export function DoneNext({ data, setData }: DoneNextProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => removeNext(idx)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 export-hidden"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -244,7 +244,7 @@ export function DoneNext({ data, setData }: DoneNextProps) {
           onClick={addNext}
           variant="outline"
           size="sm"
-          className="mt-4 gap-2 hover:bg-[var(--mars-blue-primary)] hover:text-white transition-colors bg-transparent"
+          className="mt-4 gap-2 hover:bg-[var(--mars-blue-primary)] hover:text-white transition-colors bg-transparent export-hidden"
         >
           <Plus className="w-4 h-4" />
           Add Item

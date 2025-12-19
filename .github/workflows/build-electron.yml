@@ -1,0 +1,95 @@
+name: Build Electron App
+
+on:
+  push:
+    branches: [Dev]
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Build Windows Unpacked Directory
+    runs-on: windows-latest
+    permissions:
+      contents: write
+      actions: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js app
+        run: npm run build:web
+        env:
+          NODE_ENV: production
+
+      - name: Build Electron app (Windows unpacked)
+        run: npm run pack:dir
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Create ZIP archive
+        shell: pwsh
+        run: |
+          try {
+            $version = (Get-Content package.json | ConvertFrom-Json).version
+            Write-Host "Creating ZIP for version $version"
+            Compress-Archive -Path dist/win-unpacked -DestinationPath "dist/Mars-OnePager-$version-Windows-Unpacked.zip" -Force
+            Write-Host "Created: dist/Mars-OnePager-$version-Windows-Unpacked.zip"
+          } catch {
+            Write-Error "Failed to create ZIP archive: $_"
+            exit 1
+          }
+
+      - name: Upload unpacked directory (Dev)
+        if: github.ref == 'refs/heads/Dev'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-unpacked-dev
+          path: dist/win-unpacked/**
+          retention-days: 5
+
+      - name: Upload ZIP archive (Dev)
+        if: github.ref == 'refs/heads/Dev'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-zip-dev
+          path: dist/Mars-OnePager-*-Windows-Unpacked.zip
+          retention-days: 5
+
+      - name: Upload unpacked directory (Release)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-unpacked-release
+          path: dist/win-unpacked/**
+          retention-days: 30
+
+      - name: Upload ZIP archive (Release)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-zip-release
+          path: dist/Mars-OnePager-*-Windows-Unpacked.zip
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: dist/Mars-OnePager-*-Windows-Unpacked.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
