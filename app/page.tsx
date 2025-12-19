@@ -198,29 +198,35 @@ export default function OnePagerPage() {
     })
   }, [data, toast])
 
-  const handleImportJSON = useCallback(() => {
+  const handleImportJSON = useCallback(async () => {
     const input = document.createElement("input")
     input.type = "file"
     input.accept = ".json"
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]
       if (!file) return
-
       const reader = new FileReader()
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
           const imported = JSON.parse(event.target?.result as string)
-          setData(imported)
-          toast({
-            title: "Imported from JSON",
-            description: "Project data has been loaded successfully",
-          })
+          if (!imported || typeof imported !== 'object') {
+            toast({ title: "Import failed", description: "Invalid JSON file", variant: "destructive" })
+            return
+          }
+          const projectName = imported.projectName || file.name.replace('.json', '') || 'Imported Project'
+          const newProject = createNewProject(projectName, imported)
+          const savedProject = await saveProject(newProject)
+          setCurrentProject(savedProject)
+          setData(savedProject.data)
+          setActiveProjectId(savedProject.id)
+          setHistory(createHistoryState(savedProject.data))
+          lastSavedData.current = JSON.stringify(savedProject.data)
+          const updatedProjects = await getAllProjects()
+          setProjects(updatedProjects)
+          toast({ title: "Project imported", description: `Successfully imported "${projectName}"` })
         } catch (error) {
-          toast({
-            title: "Import failed",
-            description: "Invalid JSON file",
-            variant: "destructive",
-          })
+          console.error("Import error:", error)
+          toast({ title: "Import failed", description: "Invalid JSON file or corrupted data", variant: "destructive" })
         }
       }
       reader.readAsText(file)
@@ -338,31 +344,49 @@ export default function OnePagerPage() {
 
     const initializeProject = async () => {
       try {
-        if (projects.length === 0) {
-          const newProject = createNewProject("My First Project")
-          const savedProject = await saveProject(newProject)
+        // First, try to load the active project
+        const activeId = getActiveProjectId()
+        
+        if (activeId && projects.length > 0) {
+          // If active project exists in projects array, load it
+          const active = projects.find((p) => p.id === activeId)
+          if (active) {
+            if (cancelled) return
+            setCurrentProject(active)
+            setData(active.data)
+            setActiveProjectId(active.id)
+            const initialHistory = loadHistoryFromStorage(active.id, active.data)
+            setHistory(initialHistory)
+            lastSavedData.current = JSON.stringify(active.data)
+            isInitialMount.current = false
+            return
+          }
+        }
+        
+        // If no active project but projects exist, load the first project and set it as active
+        if (projects.length > 0) {
+          const project = projects[0]
           if (cancelled) return
-          setActiveProjectId(savedProject.id)
-          setCurrentProject(savedProject)
-          setData(savedProject.data)
-          const initialHistory = loadHistoryFromStorage(savedProject.id, savedProject.data)
+          setCurrentProject(project)
+          setData(project.data)
+          setActiveProjectId(project.id)
+          const initialHistory = loadHistoryFromStorage(project.id, project.data)
           setHistory(initialHistory)
-          lastSavedData.current = JSON.stringify(savedProject.data)
+          lastSavedData.current = JSON.stringify(project.data)
           isInitialMount.current = false
           return
         }
-
-        const activeId = getActiveProjectId()
-        const active = activeId ? projects.find((p) => p.id === activeId) : undefined
-        const project = active ?? projects[0]
-        if (!project) return
+        
+        // Only create a new project if projects array is completely empty
+        const newProject = createNewProject("My First Project")
+        const savedProject = await saveProject(newProject)
         if (cancelled) return
-        setCurrentProject(project)
-        setData(project.data)
-        setActiveProjectId(project.id)
-        const initialHistory = loadHistoryFromStorage(project.id, project.data)
+        setActiveProjectId(savedProject.id)
+        setCurrentProject(savedProject)
+        setData(savedProject.data)
+        const initialHistory = loadHistoryFromStorage(savedProject.id, savedProject.data)
         setHistory(initialHistory)
-        lastSavedData.current = JSON.stringify(project.data)
+        lastSavedData.current = JSON.stringify(savedProject.data)
         isInitialMount.current = false
       } catch (error) {
         console.error(error)
@@ -726,27 +750,27 @@ export default function OnePagerPage() {
                     <DropdownMenuContent align="end" className="w-64">
                       <DropdownMenuLabel>Visibility</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
+                      <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
                         <label className="flex items-center justify-between w-full cursor-pointer">
                           <span className="text-sm">Team Performance</span>
                           <Switch checked={showTeam} onCheckedChange={(v) => setShowTeam(!!v)} />
                         </label>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
+                      <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
                         <label className="flex items-center justify-between w-full cursor-pointer">
                           <span className="text-sm">Comments</span>
                           <Switch checked={showComments} onCheckedChange={(v) => setShowComments(!!v)} />
                         </label>
                       </DropdownMenuItem>
 
-                      <DropdownMenuItem asChild>
+                      <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
                         <label className="flex items-center justify-between w-full cursor-pointer">
                           <span className="text-sm">Artifacts</span>
                           <Switch checked={showArtifacts} onCheckedChange={(v) => setShowArtifacts(!!v)} />
                         </label>
                       </DropdownMenuItem>
 
-                      <DropdownMenuItem asChild>
+                      <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
                         <label className="flex items-center justify-between w-full cursor-pointer">
                           <span className="text-sm">Show NIIC Date</span>
                           <Switch checked={showNiicDate} onCheckedChange={(v) => setShowNiicDate(!!v)} />
