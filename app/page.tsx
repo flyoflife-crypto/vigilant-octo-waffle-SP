@@ -210,7 +210,7 @@ export default function OnePagerPage() {
       reader.onload = async (event) => {
         try {
           const imported = JSON.parse(event.target?.result as string)
-          if (!imported || typeof imported !== 'object') {
+          if (!imported || typeof imported !== 'object' || Array.isArray(imported)) {
             toast({ title: "Import failed", description: "Invalid JSON file", variant: "destructive" })
             return
           }
