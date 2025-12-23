@@ -1,5 +1,4 @@
-import { openDB, DBSchema, IDBPDatabase } from 'idb'
-import type { OnePagerData } from '@/types/onepager'
+import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { Project } from './storage'
 import type { HistoryState } from './history'
 
@@ -24,7 +23,7 @@ let dbInstance: IDBPDatabase<MarsDB> | null = null
 async function getDB(): Promise<IDBPDatabase<MarsDB>> {
   if (dbInstance) return dbInstance
 
-  dbInstance = await openDB<MarsDB>('mars-onepager', 1, {
+  dbInstance = await openDB<MarsDB>('mars-onepager-db', 1, {
     upgrade(db) {
       const projectStore = db.createObjectStore('projects', { keyPath: 'id' })
       projectStore.createIndex('by-date', 'updatedAt')
@@ -40,7 +39,7 @@ export async function saveProjectIDB(project: Project): Promise<Project> {
   const db = await getDB()
   
   if (!project.id) {
-    project.id = `project-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    project.id = `project-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
     project.createdAt = new Date().toISOString()
   }
 

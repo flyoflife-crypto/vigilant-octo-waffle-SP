@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/mars/header"
 import { KpiStrip } from "@/components/mars/kpi-strip"
@@ -14,7 +14,7 @@ import { ExtraSections } from "@/components/mars/extra-sections"
 import { TopButtons } from "@/components/mars/top-buttons"
 import { ProjectManager } from "@/components/mars/project-manager"
 import { PDFExportDialog } from "@/components/mars/pdf-export-dialog"
-import { AutoSaveIndicator } from "@/components/mars/auto-save-indicator"
+import { SaveStatusIndicator, type SaveStatus } from "@/components/mars/SaveStatusIndicator"
 import { KeyboardShortcutsDialog } from "@/components/mars/keyboard-shortcuts-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { sanitizeHTML } from "@/lib/sanitize"
@@ -65,6 +65,46 @@ const quarterRanges = [
 ]
 
 const weekToPeriod = (weekIndex: number) => Math.min(13, Math.floor(weekIndex / 4) + 1)
+
+type DebouncedSave = ((project: Project, history: HistoryState) => void) & {
+  flush: () => void
+  cancel: () => void
+}
+
+function createDebouncedSave(
+  fn: (project: Project, history: HistoryState) => Promise<void>,
+  delay: number,
+): DebouncedSave {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  let lastArgs: [Project, HistoryState] | null = null
+
+  const wrapped = ((project: Project, history: HistoryState) => {
+    lastArgs = [project, history]
+    if (timer !== null) clearTimeout(timer)
+    timer = setTimeout(() => {
+      timer = null
+      if (lastArgs) {
+        void fn(...lastArgs)
+      }
+    }, delay)
+  }) as DebouncedSave
+
+  wrapped.flush = () => {
+    if (timer !== null && lastArgs) {
+      clearTimeout(timer)
+      timer = null
+      void fn(...lastArgs)
+    }
+  }
+
+  wrapped.cancel = () => {
+    if (timer !== null) clearTimeout(timer)
+    timer = null
+    lastArgs = null
+  }
+
+  return wrapped
+}
 
 export default function OnePagerPage() {
   const { toast } = useToast()
@@ -125,7 +165,7 @@ export default function OnePagerPage() {
   const [history, setHistory] = useState<HistoryState | null>(null)
   const [showTopMenu, setShowTopMenu] = useState(false)
   const [screenshotMode, setScreenshotMode] = useState(false)
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved')
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved')
   const [lastSaved, setLastSaved] = useState<Date | undefined>(undefined)
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
 
@@ -187,6 +227,32 @@ export default function OnePagerPage() {
 
   const isInitialMount = useRef(true)
   const lastSavedData = useRef<string>("")
+  const unmountedRef = useRef(false)
+
+  const debouncedSaveProject = useMemo(
+    () =>
+      createDebouncedSave(async (project: Project, historyState: HistoryState) => {
+        try {
+          const savedProject = await saveProject(project)
+          if (unmountedRef.current) return
+          setCurrentProject(savedProject)
+          await saveHistoryToStorage(savedProject.id, historyState)
+          if (unmountedRef.current) return
+          setSaveStatus('saved')
+          setLastSaved(new Date())
+        } catch (e) {
+          console.error(e)
+          if (unmountedRef.current) return
+          setSaveStatus('error')
+          toast({
+            variant: "destructive",
+            title: "Failed to save project",
+            description: e instanceof Error ? e.message : 'Unexpected storage error',
+          })
+        }
+      }, 500),
+    [saveProject, saveHistoryToStorage, toast],
+  )
 
   const handleExportJSON = useCallback(() => {
     const json = JSON.stringify(data, null, 2)
@@ -224,7 +290,7 @@ export default function OnePagerPage() {
           const savedProject = await saveProject(newProject)
           setCurrentProject(savedProject)
           setData(savedProject.data)
-          setActiveProjectId(savedProject.id)
+          await setActiveProjectId(savedProject.id)
           setHistory(createHistoryState(savedProject.data))
           lastSavedData.current = JSON.stringify(savedProject.data)
           const updatedProjects = await getAllProjects()
@@ -346,7 +412,7 @@ export default function OnePagerPage() {
     const initializeProject = async () => {
       try {
         // First, try to load the active project
-        const activeId = getActiveProjectId()
+        const activeId = await getActiveProjectId()
         
         if (activeId && projects.length > 0) {
           // If active project exists in projects array, load it
@@ -355,8 +421,9 @@ export default function OnePagerPage() {
             if (cancelled) return
             setCurrentProject(active)
             setData(active.data)
-            setActiveProjectId(active.id)
-            const initialHistory = loadHistoryFromStorage(active.id, active.data)
+            await setActiveProjectId(active.id)
+            const initialHistory = await loadHistoryFromStorage(active.id, active.data)
+            if (cancelled) return
             setHistory(initialHistory)
             lastSavedData.current = JSON.stringify(active.data)
             isInitialMount.current = false
@@ -370,8 +437,9 @@ export default function OnePagerPage() {
           if (cancelled) return
           setCurrentProject(project)
           setData(project.data)
-          setActiveProjectId(project.id)
-          const initialHistory = loadHistoryFromStorage(project.id, project.data)
+          await setActiveProjectId(project.id)
+          const initialHistory = await loadHistoryFromStorage(project.id, project.data)
+          if (cancelled) return
           setHistory(initialHistory)
           lastSavedData.current = JSON.stringify(project.data)
           isInitialMount.current = false
@@ -382,10 +450,10 @@ export default function OnePagerPage() {
         const newProject = createNewProject("My First Project")
         const savedProject = await saveProject(newProject)
         if (cancelled) return
-        setActiveProjectId(savedProject.id)
+        await setActiveProjectId(savedProject.id)
         setCurrentProject(savedProject)
         setData(savedProject.data)
-        const initialHistory = loadHistoryFromStorage(savedProject.id, savedProject.data)
+        const initialHistory = await loadHistoryFromStorage(savedProject.id, savedProject.data)
         setHistory(initialHistory)
         lastSavedData.current = JSON.stringify(savedProject.data)
         isInitialMount.current = false
@@ -424,32 +492,24 @@ export default function OnePagerPage() {
     setHistory(newHistory)
 
     setSaveStatus('saving')
+    debouncedSaveProject(updatedProject, newHistory)
+  }, [data, currentProject, history, debouncedSaveProject])
 
-    ;(async () => {
-      try {
-        const savedProject = await saveProject(updatedProject)
-        setCurrentProject(savedProject)
-        saveHistoryToStorage(savedProject.id, newHistory)
-        setSaveStatus('saved')
-        setLastSaved(new Date())
-      } catch (e) {
-        console.error(e)
-        setSaveStatus('error')
-        toast({
-          variant: "destructive",
-          title: "Failed to save project to SharePoint",
-        })
-      }
-    })()
-  }, [data, currentProject, history, toast])
+  useEffect(() => {
+    return () => {
+      unmountedRef.current = true
+      debouncedSaveProject.flush()
+      debouncedSaveProject.cancel()
+    }
+  }, [debouncedSaveProject])
 
-  const handleUndo = useCallback(() => {
-    if (!history || !canUndo(history)) return
+  const handleUndo = useCallback(async () => {
+    if (!history || !canUndo(history) || !currentProject) return
 
     const newHistory = undo(history)
     setHistory(newHistory)
     setData(newHistory.present)
-    saveHistoryToStorage(currentProject!.id, newHistory)
+    await saveHistoryToStorage(currentProject.id, newHistory)
 
     toast({
       title: "Undo",
@@ -457,13 +517,13 @@ export default function OnePagerPage() {
     })
   }, [history, currentProject, toast])
 
-  const handleRedo = useCallback(() => {
-    if (!history || !canRedo(history)) return
+  const handleRedo = useCallback(async () => {
+    if (!history || !canRedo(history) || !currentProject) return
 
     const newHistory = redo(history)
     setHistory(newHistory)
     setData(newHistory.present)
-    saveHistoryToStorage(currentProject!.id, newHistory)
+    await saveHistoryToStorage(currentProject.id, newHistory)
 
     toast({
       title: "Redo",
@@ -478,7 +538,7 @@ export default function OnePagerPage() {
         const savedProject = await saveProject(newProject)
         setCurrentProject(savedProject)
         setData(savedProject.data)
-        setActiveProjectId(savedProject.id)
+        await setActiveProjectId(savedProject.id)
         setHistory(createHistoryState(savedProject.data))
         lastSavedData.current = JSON.stringify(savedProject.data)
         toast({
@@ -505,7 +565,7 @@ export default function OnePagerPage() {
           const savedProject = await saveProject(newProject)
           setCurrentProject(savedProject)
           setData(savedProject.data)
-          setActiveProjectId(savedProject.id)
+          await setActiveProjectId(savedProject.id)
           setHistory(createHistoryState(savedProject.data))
           lastSavedData.current = JSON.stringify(savedProject.data)
           toast({
@@ -531,7 +591,7 @@ export default function OnePagerPage() {
         const savedProject = await saveProject(newProject)
         setCurrentProject(savedProject)
         setData(savedProject.data)
-        setActiveProjectId(savedProject.id)
+        await setActiveProjectId(savedProject.id)
         setHistory(createHistoryState(savedProject.data))
         lastSavedData.current = JSON.stringify(savedProject.data)
         toast({
@@ -592,11 +652,12 @@ export default function OnePagerPage() {
   }, [data])
 
   const handleSelectProject = useCallback(
-    (project: Project) => {
+    async (project: Project) => {
       setCurrentProject(project)
       setData(project.data)
-      setActiveProjectId(project.id)
-      setHistory(loadHistoryFromStorage(project.id, project.data))
+      await setActiveProjectId(project.id)
+      const historyState = await loadHistoryFromStorage(project.id, project.data)
+      setHistory(historyState)
       lastSavedData.current = JSON.stringify(project.data)
       toast({
         title: "Project loaded",
@@ -670,14 +731,14 @@ export default function OnePagerPage() {
       // Undo: Ctrl+Z / Cmd+Z
       if (modifier && e.key === "z" && !e.shiftKey) {
         e.preventDefault()
-        handleUndo()
+        void handleUndo()
         return
       }
 
       // Redo: Ctrl+Shift+Z / Cmd+Shift+Z or Ctrl+Y / Cmd+Y
       if ((modifier && e.key === "z" && e.shiftKey) || (modifier && e.key === "y")) {
         e.preventDefault()
-        handleRedo()
+        void handleRedo()
         return
       }
 
@@ -889,7 +950,7 @@ export default function OnePagerPage() {
           <ExtraSections data={data} setData={setData} />
         </div>
 
-        <AutoSaveIndicator status={saveStatus} lastSaved={lastSaved} />
+        <SaveStatusIndicator status={saveStatus} lastSaved={lastSaved} />
         <KeyboardShortcutsDialog open={showKeyboardShortcuts} onOpenChange={setShowKeyboardShortcuts} />
       </div>
     </div>
