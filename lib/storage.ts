@@ -1,4 +1,16 @@
 import type { OnePagerData } from "@/types/onepager"
+import {
+  deleteProjectIDB,
+  getAllProjectsIDB,
+  getHistoryIDB,
+  getProjectByIdIDB,
+  getSettingIDB,
+  isIndexedDBAvailable,
+  saveHistoryIDB,
+  saveProjectIDB,
+  setSettingIDB,
+} from "./storage-idb"
+import type { HistoryState } from "./history"
 
 export interface Project {
   id: string
@@ -8,10 +20,20 @@ export interface Project {
   updatedAt: string
 }
 
+export interface AppSettings {
+  useIndexedDB: boolean
+  [key: string]: unknown
+}
+
 // Storage keys
 const ACTIVE_PROJECT_KEY = "mars-onepager-active"
 const PROJECTS_KEY = "mars-onepager-projects"
 const PROJECT_PREFIX = "mars-project-"
+const HISTORY_PREFIX = "mars-history-"
+const SETTINGS_KEY = "mars-onepager-settings"
+const APP_SETTINGS_IDB_KEY = "app-settings"
+
+const defaultSettings: AppSettings = { useIndexedDB: false }
 
 export const WEEK_COUNT = 52
 export const PERIOD_COUNT = 13
@@ -31,6 +53,66 @@ export const QUARTER_PERIODS: number[][] = [
   [7, 8, 9],
   [10, 11, 12, 13],
 ]
+
+const isBrowser = () => typeof window !== "undefined"
+
+function getSettingsLocal(): AppSettings {
+  if (!isBrowser()) return defaultSettings
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY)
+    if (stored) {
+      return { ...defaultSettings, ...(JSON.parse(stored) as AppSettings) }
+    }
+  } catch (error) {
+    console.error("[Storage] Failed to read local settings:", error)
+  }
+  return defaultSettings
+}
+
+function saveSettingsLocal(settings: AppSettings): void {
+  if (!isBrowser()) return
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+  } catch (error) {
+    console.error("[Storage] Failed to save local settings:", error)
+  }
+}
+
+function getActiveProjectIdLocal(): string | null {
+  if (!isBrowser()) return null
+  return localStorage.getItem(ACTIVE_PROJECT_KEY)
+}
+
+function setActiveProjectIdLocal(id: string | null): void {
+  if (!isBrowser()) return
+  if (id === null) {
+    localStorage.removeItem(ACTIVE_PROJECT_KEY)
+    return
+  }
+  localStorage.setItem(ACTIVE_PROJECT_KEY, id)
+}
+
+function saveHistoryLocal(projectId: string, history: HistoryState): void {
+  if (!isBrowser()) return
+  try {
+    localStorage.setItem(`${HISTORY_PREFIX}${projectId}`, JSON.stringify(history))
+  } catch (error) {
+    console.error("[Storage] Failed to save history locally:", error)
+  }
+}
+
+function loadHistoryLocal(projectId: string): HistoryState | null {
+  if (!isBrowser()) return null
+  try {
+    const stored = localStorage.getItem(`${HISTORY_PREFIX}${projectId}`)
+    if (stored) {
+      return JSON.parse(stored) as HistoryState
+    }
+  } catch (error) {
+    console.error("[Storage] Failed to load history locally:", error)
+  }
+  return null
+}
 
 /**
  * Migrate legacy data from old localStorage keys to new format
@@ -122,36 +204,30 @@ function migrateLegacyData(): void {
   }
 }
 
-export async function getAllProjects(): Promise<Project[]> {
-  if (typeof window === "undefined") return []
+let migrationAttempted = false
+let migrationPromise: Promise<void> | null = null
 
+async function getAllProjectsLocal(): Promise<Project[]> {
+  if (!isBrowser()) return []
   migrateLegacyData()
 
   try {
     const projectsJson = localStorage.getItem(PROJECTS_KEY)
-    if (!projectsJson) {
-      console.log("[Storage] No projects found in localStorage")
-      return []
-    }
+    if (!projectsJson) return []
 
     const projectIds: string[] = JSON.parse(projectsJson)
-    console.log(`[Storage] Loading ${projectIds.length} projects`)
-    
     const projects: Project[] = []
 
     for (const id of projectIds) {
       const projectJson = localStorage.getItem(PROJECT_PREFIX + id)
       if (projectJson) {
         try {
-          const project = JSON.parse(projectJson)
-          projects.push(project)
+          projects.push(JSON.parse(projectJson))
         } catch (e) {
           console.error(`[Storage] Failed to parse project ${id}:`, e)
         }
       }
     }
-
-    console.log(`[Storage] Loaded ${projects.length} projects successfully`)
     return projects
   } catch (error) {
     console.error("[Storage] Failed to load projects:", error)
@@ -159,15 +235,11 @@ export async function getAllProjects(): Promise<Project[]> {
   }
 }
 
-export async function getProjectById(id: string): Promise<Project | null> {
-  if (!id || typeof window === "undefined") return null
-
+async function getProjectByIdLocal(id: string): Promise<Project | null> {
+  if (!isBrowser() || !id) return null
   try {
     const projectJson = localStorage.getItem(PROJECT_PREFIX + id)
-    if (!projectJson) {
-      console.warn(`[Storage] Project ${id} not found`)
-      return null
-    }
+    if (!projectJson) return null
     return JSON.parse(projectJson)
   } catch (error) {
     console.error(`[Storage] Failed to get project ${id}:`, error)
@@ -175,57 +247,33 @@ export async function getProjectById(id: string): Promise<Project | null> {
   }
 }
 
-export function getActiveProjectId(): string | null {
-  if (typeof window === "undefined") return null
-  const id = localStorage.getItem(ACTIVE_PROJECT_KEY)
-  console.log(`[Storage] Active project ID: ${id}`)
-  return id
-}
-
-export function setActiveProjectId(id: string): void {
-  if (typeof window === "undefined") return
-  localStorage.setItem(ACTIVE_PROJECT_KEY, id)
-  console.log(`[Storage] Set active project: ${id}`)
-}
-
-export async function saveProject(project: Project): Promise<Project> {
-  if (typeof window === "undefined") {
-    throw new Error("localStorage is only available in the browser")
+async function saveProjectLocal(project: Project): Promise<Project> {
+  if (!isBrowser()) throw new Error("localStorage is only available in the browser")
+  if (!project.id) {
+    project.id = `project-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+    project.createdAt = new Date().toISOString()
   }
 
-  try {
-    if (!project.id) {
-      project.id = `project-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-      project.createdAt = new Date().toISOString()
-      console.log(`[Storage] Created new project ID: ${project.id}`)
-    }
-
-    const savedProject: Project = {
-      ...project,
-      updatedAt: new Date().toISOString(),
-    }
-
-    localStorage.setItem(PROJECT_PREFIX + savedProject.id, JSON.stringify(savedProject))
-
-    const projectsJson = localStorage.getItem(PROJECTS_KEY)
-    const projectIds: string[] = projectsJson ? JSON.parse(projectsJson) : []
-
-    if (!projectIds.includes(savedProject.id)) {
-      projectIds.push(savedProject.id)
-      localStorage.setItem(PROJECTS_KEY, JSON.stringify(projectIds))
-      console.log(`[Storage] Added project ${savedProject.id} to projects list`)
-    }
-
-    console.log(`[Storage] Saved project ${savedProject.id} successfully`)
-    return savedProject
-  } catch (error) {
-    console.error("[Storage] Failed to save project:", error)
-    throw error
+  const savedProject: Project = {
+    ...project,
+    updatedAt: new Date().toISOString(),
   }
+
+  localStorage.setItem(PROJECT_PREFIX + savedProject.id, JSON.stringify(savedProject))
+
+  const projectsJson = localStorage.getItem(PROJECTS_KEY)
+  const projectIds: string[] = projectsJson ? JSON.parse(projectsJson) : []
+
+  if (!projectIds.includes(savedProject.id)) {
+    projectIds.push(savedProject.id)
+    localStorage.setItem(PROJECTS_KEY, JSON.stringify(projectIds))
+  }
+
+  return savedProject
 }
 
-export async function deleteProject(id: string): Promise<void> {
-  if (!id || typeof window === "undefined") return
+async function deleteProjectLocal(id: string): Promise<void> {
+  if (!isBrowser() || !id) return
 
   try {
     localStorage.removeItem(PROJECT_PREFIX + id)
@@ -237,14 +285,226 @@ export async function deleteProject(id: string): Promise<void> {
       localStorage.setItem(PROJECTS_KEY, JSON.stringify(filtered))
     }
 
-    if (getActiveProjectId() === id) {
+    if (getActiveProjectIdLocal() === id) {
       localStorage.removeItem(ACTIVE_PROJECT_KEY)
     }
-
-    console.log(`[Storage] Deleted project ${id}`)
   } catch (error) {
     console.error(`[Storage] Failed to delete project ${id}:`, error)
   }
+}
+
+async function ensureIndexedDBMigration(): Promise<void> {
+  if (migrationAttempted) return migrationPromise ?? Promise.resolve()
+  migrationAttempted = true
+  if (!isBrowser() || !isIndexedDBAvailable()) return
+
+  migrationPromise = (async () => {
+    const localSettings = getSettingsLocal()
+    if (localSettings.useIndexedDB) return
+
+    const localProjects = await getAllProjectsLocal()
+    const activeId = getActiveProjectIdLocal()
+    try {
+      if (!localProjects.length && !activeId) {
+        const updatedSettings: AppSettings = { ...localSettings, useIndexedDB: true }
+        await setSettingIDB(APP_SETTINGS_IDB_KEY, updatedSettings)
+        saveSettingsLocal(updatedSettings)
+        return
+      }
+
+      for (const project of localProjects) {
+        await saveProjectIDB(project)
+        const history = loadHistoryLocal(project.id)
+        if (history) {
+          await saveHistoryIDB(project.id, history)
+        }
+      }
+
+      if (activeId) {
+        await setSettingIDB(ACTIVE_PROJECT_KEY, activeId)
+      }
+
+      const updatedSettings: AppSettings = { ...localSettings, useIndexedDB: true }
+      await setSettingIDB(APP_SETTINGS_IDB_KEY, updatedSettings)
+      saveSettingsLocal(updatedSettings)
+    } catch (error) {
+      console.error("[Storage] Failed to migrate to IndexedDB:", error)
+    }
+  })()
+
+  return migrationPromise
+}
+
+export async function getSettings(): Promise<AppSettings> {
+  if (!isBrowser()) return defaultSettings
+  const local = getSettingsLocal()
+  let merged = { ...defaultSettings, ...local }
+
+  if (!isIndexedDBAvailable()) return merged
+
+  try {
+    const stored = await getSettingIDB(APP_SETTINGS_IDB_KEY)
+    if (stored) {
+      merged = { ...merged, ...(stored as AppSettings) }
+      saveSettingsLocal(merged)
+    }
+  } catch (error) {
+    console.error("[Storage] Failed to read settings from IndexedDB:", error)
+  }
+
+  return merged
+}
+
+export async function saveSettings(settings: AppSettings): Promise<void> {
+  if (!isBrowser()) return
+  const merged = { ...defaultSettings, ...settings }
+  saveSettingsLocal(merged)
+
+  if (!isIndexedDBAvailable()) return
+  try {
+    await setSettingIDB(APP_SETTINGS_IDB_KEY, merged)
+  } catch (error) {
+    console.error("[Storage] Failed to save settings to IndexedDB:", error)
+  }
+}
+
+export async function shouldUseIndexedDB(): Promise<boolean> {
+  if (!isBrowser() || !isIndexedDBAvailable()) return false
+  const settings = await getSettings()
+  return !!settings.useIndexedDB
+}
+
+export async function getAllProjects(): Promise<Project[]> {
+  if (!isBrowser()) return []
+
+  await ensureIndexedDBMigration()
+
+  if (await shouldUseIndexedDB()) {
+    try {
+      return await getAllProjectsIDB()
+    } catch (error) {
+      console.error("[Storage] IndexedDB getAllProjects failed, falling back:", error)
+    }
+  }
+
+  return await getAllProjectsLocal()
+}
+
+export async function getProjectById(id: string): Promise<Project | null> {
+  if (!id || !isBrowser()) return null
+
+  await ensureIndexedDBMigration()
+
+  if (await shouldUseIndexedDB()) {
+    try {
+      return await getProjectByIdIDB(id)
+    } catch (error) {
+      console.error(`[Storage] IndexedDB getProjectById failed (${id}), falling back:`, error)
+    }
+  }
+
+  return await getProjectByIdLocal(id)
+}
+
+export async function getActiveProjectId(): Promise<string | null> {
+  if (!isBrowser()) return null
+
+  await ensureIndexedDBMigration()
+
+  if (await shouldUseIndexedDB()) {
+    try {
+      const id = await getSettingIDB(ACTIVE_PROJECT_KEY)
+      if (typeof id === "string") {
+        return id
+      }
+    } catch (error) {
+      console.error("[Storage] IndexedDB getActiveProjectId failed, falling back:", error)
+    }
+  }
+
+  return getActiveProjectIdLocal()
+}
+
+export async function setActiveProjectId(id: string | null): Promise<void> {
+  setActiveProjectIdLocal(id)
+  if (!isBrowser()) return
+
+  if (await shouldUseIndexedDB()) {
+    try {
+      await setSettingIDB(ACTIVE_PROJECT_KEY, id)
+    } catch (error) {
+      console.error("[Storage] IndexedDB setActiveProjectId failed, keeping local backup:", error)
+    }
+  }
+}
+
+export async function saveProject(project: Project): Promise<Project> {
+  if (!isBrowser()) {
+    throw new Error("Storage is only available in the browser")
+  }
+
+  await ensureIndexedDBMigration()
+
+  if (await shouldUseIndexedDB()) {
+    try {
+      return await saveProjectIDB(project)
+    } catch (error) {
+      console.error("[Storage] IndexedDB saveProject failed, falling back to localStorage:", error)
+    }
+  }
+
+  return await saveProjectLocal(project)
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  if (!isBrowser() || !id) return
+
+  await ensureIndexedDBMigration()
+
+  if (await shouldUseIndexedDB()) {
+    try {
+      await deleteProjectIDB(id)
+      return
+    } catch (error) {
+      console.error("[Storage] IndexedDB deleteProject failed, falling back:", error)
+    }
+  }
+
+  await deleteProjectLocal(id)
+}
+
+export async function saveHistoryRecord(projectId: string, history: HistoryState): Promise<void> {
+  if (!isBrowser()) return
+
+  await ensureIndexedDBMigration()
+
+  if (await shouldUseIndexedDB()) {
+    try {
+      await saveHistoryIDB(projectId, history)
+      return
+    } catch (error) {
+      console.error("[Storage] IndexedDB saveHistory failed, falling back:", error)
+    }
+  }
+
+  saveHistoryLocal(projectId, history)
+}
+
+export async function getHistoryRecord(projectId: string): Promise<HistoryState | null> {
+  if (!isBrowser()) return null
+
+  await ensureIndexedDBMigration()
+
+  if (await shouldUseIndexedDB()) {
+    try {
+      const history = await getHistoryIDB(projectId)
+      if (history) return history
+    } catch (error) {
+      console.error("[Storage] IndexedDB getHistory failed, falling back:", error)
+    }
+  }
+
+  return loadHistoryLocal(projectId)
 }
 
 export function createNewProject(name: string, templateData?: OnePagerData): Project {

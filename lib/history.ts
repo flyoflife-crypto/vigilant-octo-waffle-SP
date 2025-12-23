@@ -1,4 +1,5 @@
 import type { OnePagerData } from "@/types/onepager"
+import { getHistoryRecord, saveHistoryRecord } from "./storage"
 
 const MAX_HISTORY = 25
 
@@ -71,22 +72,12 @@ export function pushHistory(history: HistoryState, newData: OnePagerData): Histo
 }
 
 // Save/load history from localStorage
-export function saveHistoryToStorage(projectId: string, history: HistoryState): void {
-  try {
-    localStorage.setItem(`mars-history-${projectId}`, JSON.stringify(history))
-  } catch (error) {
-    console.error("[v0] Failed to save history:", error)
-  }
+export async function saveHistoryToStorage(projectId: string, history: HistoryState): Promise<void> {
+  await saveHistoryRecord(projectId, history)
 }
 
-export function loadHistoryFromStorage(projectId: string, defaultData: OnePagerData): HistoryState {
-  try {
-    const stored = localStorage.getItem(`mars-history-${projectId}`)
-    if (stored) {
-      return JSON.parse(stored)
-    }
-  } catch (error) {
-    console.error("[v0] Failed to load history:", error)
-  }
+export async function loadHistoryFromStorage(projectId: string, defaultData: OnePagerData): Promise<HistoryState> {
+  const stored = await getHistoryRecord(projectId)
+  if (stored) return stored
   return createHistoryState(defaultData)
 }
