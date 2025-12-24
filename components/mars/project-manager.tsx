@@ -5,20 +5,24 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { getAllProjects, deleteProject, type Project } from "@/lib/storage"
-import { Plus, Trash2, Copy, FolderOpen } from "lucide-react"
+import { Plus, Trash2, Copy, FolderOpen, FileText } from "lucide-react"
+import { TemplateSelectorDialog } from "./template-selector-dialog"
+import type { ProjectTemplate } from "@/lib/templates"
 
 interface ProjectManagerProps {
   currentProjectId: string | null
   onSelectProject: (project: Project) => void
   onCreateNew: (name: string) => Promise<void>
   onDuplicate: (project: Project) => Promise<void>
+  onCreateFromTemplate?: (template: ProjectTemplate) => Promise<void>
 }
 
-export function ProjectManager({ currentProjectId, onSelectProject, onCreateNew, onDuplicate }: ProjectManagerProps) {
+export function ProjectManager({ currentProjectId, onSelectProject, onCreateNew, onDuplicate, onCreateFromTemplate }: ProjectManagerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [newProjectName, setNewProjectName] = useState("")
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(false)
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -93,17 +97,30 @@ export function ProjectManager({ currentProjectId, onSelectProject, onCreateNew,
             <h3 className="font-bold text-lg mb-4 text-[var(--mars-blue-primary)]">Project Manager</h3>
 
             {/* Create new project */}
-            <div className="flex gap-2 mb-4">
-              <Input
-                placeholder="New project name..."
-                value={newProjectName}
-                onChange={(e) => setNewProjectName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-              />
-              <Button onClick={handleCreate} size="sm" className="gap-2">
-                <Plus className="w-4 h-4" />
-                Create
-              </Button>
+            <div className="space-y-2 mb-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="New project name..."
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                />
+                <Button onClick={handleCreate} size="sm" className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Create
+                </Button>
+              </div>
+              {onCreateFromTemplate && (
+                <Button 
+                  onClick={() => setShowTemplateSelector(true)} 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  Use Template
+                </Button>
+              )}
             </div>
 
             {/* Project list */}
@@ -160,6 +177,17 @@ export function ProjectManager({ currentProjectId, onSelectProject, onCreateNew,
             </div>
           </Card>
         </>
+      )}
+      
+      {onCreateFromTemplate && (
+        <TemplateSelectorDialog 
+          open={showTemplateSelector} 
+          onOpenChange={setShowTemplateSelector}
+          onSelectTemplate={async (template) => {
+            await onCreateFromTemplate(template)
+            setIsOpen(false)
+          }}
+        />
       )}
     </div>
   )

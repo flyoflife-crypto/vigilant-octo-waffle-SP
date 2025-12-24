@@ -14,6 +14,8 @@ import { ExtraSections } from "@/components/mars/extra-sections"
 import { TopButtons } from "@/components/mars/top-buttons"
 import { ProjectManager } from "@/components/mars/project-manager"
 import { PDFExportDialog } from "@/components/mars/pdf-export-dialog"
+import { AutoSaveIndicator } from "@/components/mars/auto-save-indicator"
+import { KeyboardShortcutsDialog } from "@/components/mars/keyboard-shortcuts-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { sanitizeHTML } from "@/lib/sanitize"
 import type { OnePagerData, GanttData } from "@/types/onepager"
@@ -123,6 +125,9 @@ export default function OnePagerPage() {
   const [history, setHistory] = useState<HistoryState | null>(null)
   const [showTopMenu, setShowTopMenu] = useState(false)
   const [screenshotMode, setScreenshotMode] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved')
+  const [lastSaved, setLastSaved] = useState<Date | undefined>(undefined)
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
 
   useEffect(() => {
     const b = document?.body
@@ -418,13 +423,18 @@ export default function OnePagerPage() {
     const newHistory = pushHistory(history, data)
     setHistory(newHistory)
 
+    setSaveStatus('saving')
+
     ;(async () => {
       try {
         const savedProject = await saveProject(updatedProject)
         setCurrentProject(savedProject)
         saveHistoryToStorage(savedProject.id, newHistory)
+        setSaveStatus('saved')
+        setLastSaved(new Date())
       } catch (e) {
         console.error(e)
+        setSaveStatus('error')
         toast({
           variant: "destructive",
           title: "Failed to save project to SharePoint",
@@ -506,6 +516,31 @@ export default function OnePagerPage() {
           console.error(error)
           toast({ variant: "destructive", title: "Failed to duplicate project" })
         }
+      }
+    },
+    [toast],
+  )
+
+  const handleCreateFromTemplate = useCallback(
+    async (template: any) => {
+      try {
+        const newProject = {
+          ...createNewProject(template.name),
+          data: structuredClone(template.data),
+        }
+        const savedProject = await saveProject(newProject)
+        setCurrentProject(savedProject)
+        setData(savedProject.data)
+        setActiveProjectId(savedProject.id)
+        setHistory(createHistoryState(savedProject.data))
+        lastSavedData.current = JSON.stringify(savedProject.data)
+        toast({
+          title: "Project created from template",
+          description: `Created "${template.name}"`,
+        })
+      } catch (error) {
+        console.error(error)
+        toast({ variant: "destructive", title: "Failed to create project from template" })
       }
     },
     [toast],
@@ -679,11 +714,18 @@ export default function OnePagerPage() {
         }
         return
       }
+
+      // Show keyboard shortcuts: ?
+      if (e.key === "?" && !modifier && !e.shiftKey) {
+        e.preventDefault()
+        setShowKeyboardShortcuts(true)
+        return
+      }
     }
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [handleUndo, handleRedo, handleExportJSON, handleExportPDF, handleCreateNew, toast])
+  }, [handleUndo, handleRedo, handleExportJSON, handleExportPDF, handleExportPNG, handleCreateNew, toast])
 
   if (isLoading || !data || !currentProject) {
     return (
@@ -717,6 +759,7 @@ export default function OnePagerPage() {
                   onSelectProject={handleSelectProject}
                   onCreateNew={handleCreateNew}
                   onDuplicate={handleDuplicate}
+                  onCreateFromTemplate={handleCreateFromTemplate}
                 />
 
                 <TopButtons
@@ -728,6 +771,7 @@ export default function OnePagerPage() {
                   onRedo={handleRedo}
                   canUndo={history ? canUndo(history) : false}
                   canRedo={history ? canRedo(history) : false}
+                  onShowKeyboardShortcuts={() => setShowKeyboardShortcuts(true)}
                 />
 
                 <PDFExportDialog open={pdfDialogOpen} onOpenChange={setPdfDialogOpen} onExport={handlePDFExport} isLoading={isExportingPdf} />
@@ -844,6 +888,9 @@ export default function OnePagerPage() {
 
           <ExtraSections data={data} setData={setData} />
         </div>
+
+        <AutoSaveIndicator status={saveStatus} lastSaved={lastSaved} />
+        <KeyboardShortcutsDialog open={showKeyboardShortcuts} onOpenChange={setShowKeyboardShortcuts} />
       </div>
     </div>
   )

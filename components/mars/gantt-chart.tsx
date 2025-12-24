@@ -257,6 +257,90 @@ export function GanttChart({ type, title, data, onChange, selectedQuarter, onQua
         setContextMenu(null)
         setSelectedBar(null)
         setSelectedMs(null)
+        return
+      }
+
+      // Keyboard navigation for selected bars/milestones
+      if (selectedBar !== null && data.bars[selectedBar]) {
+        const bar = data.bars[selectedBar]
+        let shouldUpdate = false
+        let newBars = [...data.bars]
+
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          if (bar.start > 0) {
+            const width = bar.end - bar.start
+            newBars[selectedBar] = { ...bar, start: bar.start - 1, end: bar.start - 1 + width }
+            shouldUpdate = true
+          }
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          if (bar.end < data.labels.length - 1) {
+            const width = bar.end - bar.start
+            newBars[selectedBar] = { ...bar, start: bar.start + 1, end: bar.start + 1 + width }
+            shouldUpdate = true
+          }
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          if (bar.row > 0) {
+            newBars[selectedBar] = { ...bar, row: bar.row - 1 }
+            shouldUpdate = true
+          }
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          if (bar.row < data.rows.length - 1) {
+            newBars[selectedBar] = { ...bar, row: bar.row + 1 }
+            shouldUpdate = true
+          }
+        } else if (e.key === 'Delete') {
+          e.preventDefault()
+          newBars.splice(selectedBar, 1)
+          setSelectedBar(null)
+          shouldUpdate = true
+        }
+
+        if (shouldUpdate) {
+          onChange({ ...data, bars: newBars })
+        }
+      } else if (selectedMs !== null && data.milestones[selectedMs]) {
+        const ms = data.milestones[selectedMs]
+        let shouldUpdate = false
+        let newMs = [...data.milestones]
+
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          if (ms.at > 0) {
+            newMs[selectedMs] = { ...ms, at: ms.at - 1 }
+            shouldUpdate = true
+          }
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          if (ms.at < data.labels.length - 1) {
+            newMs[selectedMs] = { ...ms, at: ms.at + 1 }
+            shouldUpdate = true
+          }
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          if (ms.row !== null && ms.row > 0) {
+            newMs[selectedMs] = { ...ms, row: ms.row - 1 }
+            shouldUpdate = true
+          }
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          if (ms.row !== null && ms.row < data.rows.length - 1) {
+            newMs[selectedMs] = { ...ms, row: ms.row + 1 }
+            shouldUpdate = true
+          }
+        } else if (e.key === 'Delete') {
+          e.preventDefault()
+          newMs.splice(selectedMs, 1)
+          setSelectedMs(null)
+          shouldUpdate = true
+        }
+
+        if (shouldUpdate) {
+          onChange({ ...data, milestones: newMs })
+        }
       }
     }
     document.addEventListener("click", handleClick)
@@ -286,7 +370,7 @@ export function GanttChart({ type, title, data, onChange, selectedQuarter, onQua
       document.removeEventListener("click", handleClick)
       document.removeEventListener("keydown", handleKey)
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedBar, selectedMs, data, onChange]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!dragState) return
@@ -908,8 +992,8 @@ export function GanttChart({ type, title, data, onChange, selectedQuarter, onQua
               }
             }}
           >
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-[var(--mars-blue-primary)] whitespace-nowrap bg-white px-2 py-0.5 rounded shadow-sm border border-[var(--mars-blue-primary)]">
-              Мы здесь
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-[var(--mars-blue-primary)] whitespace-nowrap bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded shadow-sm border border-[var(--mars-blue-primary)]">
+              We are here
             </div>
           </div>
         )}
